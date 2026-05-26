@@ -1,0 +1,141 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+.modal {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 480px;
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Circular Progress Loader */
+.progressRingContainer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.svgRing {
+  transform: rotate(-90deg);
+}
+
+.ringBg {
+  fill: none;
+  stroke: var(--bg-hover);
+  stroke-width: 8;
+}
+
+.ringBar {
+  fill: none;
+  stroke: var(--brand-orange);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease;
+}
+
+.progressText {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+/* Status logs */
+.statusTitle {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.statusDesc {
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 36px;
+}
+
+/* Queue State indicators checklist */
+.stepsList {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--secondary);
+}
+
+.stepIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepCompleted {
+  color: #22c55e;
+}
+
+.stepActive {
+  color: var(--brand-orange);
+  font-weight: 600;
+  animation: pulseGlow 1.5s infinite;
+}
+
+.stepPending {
+  color: var(--muted);
+}
+
+/* Close action */
+.okButton {
+  width: 100%;
+  padding: 12px;
+  background: var(--brand-gradient);
+  color: white;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  margin-top: 8px;
+}
+
+.okButton:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
+}

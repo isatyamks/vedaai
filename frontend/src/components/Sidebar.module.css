@@ -1,0 +1,216 @@
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  transition: all var(--transition-normal);
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background: var(--brand-gradient);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  box-shadow: 0 4px 10px rgba(255, 90, 54, 0.3);
+}
+
+.logoText {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.logoText span {
+  color: var(--brand-orange);
+}
+
+.createBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #1e293b; /* Dark charcoal/slate */
+  color: white;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all var(--transition-fast);
+  margin-bottom: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.createBtn:hover {
+  background: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: var(--secondary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.navLink:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+.active {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+  font-weight: 600;
+  border-left: 3px solid var(--brand-orange);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.settingsLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  color: var(--secondary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.settingsLink:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+.schoolProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.schoolAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.schoolInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.schoolName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.schoolCity {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Responsive Styles for Mobile View matching Figma Dashboard */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: 60px;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    padding: 0 16px;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .logoArea, .createBtn, .footer, .schoolProfile, .settingsLink {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    gap: 0;
+  }
+
+  .navLink {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    font-size: 10px;
+    align-items: center;
+    flex: 1;
+  }
+
+  .active {
+    border-left: none;
+    border-bottom: 3px solid var(--brand-orange);
+    border-radius: 0;
+    background: transparent;
+  }
+}

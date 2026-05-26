@@ -1,0 +1,128 @@
+.header {
+  height: 70px;
+  background-color: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 280px; /* Offset by sidebar width */
+  z-index: 90;
+  transition: all var(--transition-normal);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  transition: color var(--transition-fast);
+}
+
+.breadcrumb:hover {
+  color: var(--primary);
+}
+
+.backIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.bellButton {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary);
+  background-color: transparent;
+  transition: all var(--transition-fast);
+}
+
+.bellButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+}
+
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background-color: var(--brand-orange);
+  border-radius: 50%;
+  border: 1.5px solid white;
+}
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.profileCard:hover {
+  background-color: var(--bg-hover);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--primary);
+}
+
+/* Mobile responsive Header matching Figma */
+@media (max-width: 768px) {
+  .header {
+    left: 0;
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .username {
+    display: none;
+  }
+
+  .profileCard {
+    padding: 0;
+  }
+}
