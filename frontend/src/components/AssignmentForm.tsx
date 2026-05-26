@@ -1,129 +1,148 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, Plus, Trash2, BookOpen, AlertCircle, FileText, Sparkles } from 'lucide-react';
+import {
+  Upload,
+  Plus,
+  X,
+  Calendar,
+  AlertCircle,
+  FileText,
+  Mic,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+} from 'lucide-react';
 import { useAssignmentStore, ISectionConfig } from '../store/assignmentStore';
 import styles from './AssignmentForm.module.css';
 
+// Question type options matching the Figma design
+const QUESTION_TYPE_OPTIONS = [
+  { label: 'Multiple Choice Questions', value: 'MCQ' },
+  { label: 'Short Questions', value: 'Short' },
+  { label: 'Diagram / Graph-Based Questions', value: 'Long' },
+  { label: 'Numerical Problems', value: 'Long' },
+  { label: 'Descriptive / Essay Questions', value: 'Long' },
+  { label: 'True / False Questions', value: 'MCQ' },
+  { label: 'Fill in the Blanks', value: 'Short' },
+];
+
+interface QuestionRow {
+  id: number;
+  typeLabel: string;
+  backendType: 'MCQ' | 'Short' | 'Long';
+  count: number;
+  marks: number;
+}
+
+let rowIdCounter = 3;
+
 export default function AssignmentForm() {
-  const { createAssignment, isLoading, errorMessage } = useAssignmentStore();
+  const { createAssignment, isLoading, errorMessage, setCreationForm } = useAssignmentStore();
+
+  // Step tracker — 1: Upload/Details, 2: Review
+  const [step, setStep] = useState(1);
 
   // Basic Details State
-  const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [grade, setGrade] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [instructions, setInstructions] = useState('');
-
-  // Dynamic Sections State
-  const [sections, setSections] = useState<ISectionConfig[]>([
-    { title: 'Section A: Multiple Choice Questions', type: 'MCQ', count: 5, marksPerQuestion: 2, difficulty: 'Easy' },
-    { title: 'Section B: Short Answer Questions', type: 'Short', count: 3, marksPerQuestion: 5, difficulty: 'Moderate' },
-  ]);
-
-  // Mock File Upload State
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Form Validation State
+  // Question rows (matching Figma's table UI)
+  const [rows, setRows] = useState<QuestionRow[]>([
+    { id: 1, typeLabel: 'Multiple Choice Questions', backendType: 'MCQ', count: 4, marks: 1 },
+    { id: 2, typeLabel: 'Short Questions', backendType: 'Short', count: 4, marks: 4 },
+  ]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 1. Dynamic Section Action Handlers
-  const addSection = () => {
-    const sectionIndex = String.fromCharCode(65 + sections.length); // A, B, C...
-    const newSection: ISectionConfig = {
-      title: `Section ${sectionIndex}: New Section`,
-      type: 'Short',
-      count: 3,
-      marksPerQuestion: 5,
-      difficulty: 'Moderate',
-    };
-    setSections([...sections, newSection]);
+  // ─── Row Actions ──────────────────────────────────────────────────────────
+
+  const addRow = () => {
+    rowIdCounter++;
+    setRows((prev) => [
+      ...prev,
+      { id: rowIdCounter, typeLabel: 'Multiple Choice Questions', backendType: 'MCQ', count: 4, marks: 1 },
+    ]);
   };
 
-  const updateSection = (index: number, key: keyof ISectionConfig, value: any) => {
-    const updated = [...sections];
-    updated[index] = { ...updated[index], [key]: value };
-    setSections(updated);
+  const removeRow = (id: number) => {
+    setRows((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const deleteSection = (index: number) => {
-    const filtered = sections.filter((_, idx) => idx !== index);
-    // Renormalize titles (e.g. Section A, Section B...)
-    const normalized = filtered.map((sec, idx) => {
-      const char = String.fromCharCode(65 + idx);
-      const cleanTitle = sec.title.replace(/^Section [A-Z]:\s*/, '');
-      return {
-        ...sec,
-        title: `Section ${char}: ${cleanTitle}`,
-      };
-    });
-    setSections(normalized);
+  const updateRowType = (id: number, label: string) => {
+    const match = QUESTION_TYPE_OPTIONS.find((o) => o.label === label);
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, typeLabel: label, backendType: (match?.value as 'MCQ' | 'Short' | 'Long') || 'Short' }
+          : r
+      )
+    );
   };
 
-  const incrementCount = (index: number, key: 'count' | 'marksPerQuestion', amount: number) => {
-    const currentVal = sections[index][key] as number;
-    const newVal = Math.max(1, currentVal + amount); // Minimum is 1
-    updateSection(index, key, newVal);
+  const adjustCount = (id: number, field: 'count' | 'marks', delta: number) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, [field]: Math.max(1, r[field] + delta) } : r
+      )
+    );
   };
 
-  // 2. Mock File Upload Handler
+  // ─── File Upload ──────────────────────────────────────────────────────────
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsUploading(true);
-      // Simulate small file extraction delay
       setTimeout(() => {
         setUploadedFile(file.name);
         setIsUploading(false);
-        // Append context info to instructions automatically
-        const parsedContext = `[Attached Context File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)]\nExtract questions from the attached syllabus or reading file structure automatically.`;
-        setInstructions((prev) => (prev ? `${parsedContext}\n\n${prev}` : parsedContext));
-      }, 1500);
+        const ctx = `[Reference File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)] — Extract context from attached syllabus.`;
+        setInstructions((prev) => (prev ? `${ctx}\n\n${prev}` : ctx));
+      }, 1200);
     }
   };
 
-  const removeFile = () => {
-    setUploadedFile(null);
+  // ─── Totals ───────────────────────────────────────────────────────────────
+
+  const totalQuestions = rows.reduce((acc, r) => acc + r.count, 0);
+  const totalMarks = rows.reduce((acc, r) => acc + r.count * r.marks, 0);
+
+  // ─── Validation ───────────────────────────────────────────────────────────
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!subject) errs.subject = 'Please select a subject.';
+    if (!grade) errs.grade = 'Please select a grade.';
+    if (!dueDate) errs.dueDate = 'Due date is required.';
+    if (rows.length === 0) errs.rows = 'Add at least one question type.';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  // 3. Form Validation
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  // ─── Submit ───────────────────────────────────────────────────────────────
 
-    if (!title.trim()) newErrors.title = 'Assignment title is required.';
-    if (!subject) newErrors.subject = 'Please select a subject area.';
-    if (!grade) newErrors.grade = 'Please select a grade/class level.';
-    if (!dueDate) newErrors.dueDate = 'Due date is required.';
+  const handleSubmit = async () => {
+    if (!validate()) return;
 
-    if (sections.length === 0) {
-      newErrors.sections = 'At least one assessment section must be added.';
-    }
+    // Build an assignment title from subject + grade
+    const autoTitle = `${subject} Assessment — ${grade}`;
 
-    // Check each section
-    sections.forEach((sec, idx) => {
-      if (!sec.title.trim()) {
-        newErrors[`section_${idx}_title`] = 'Section title is required.';
-      }
-      if (sec.count <= 0) {
-        newErrors[`section_${idx}_count`] = 'Question count must be greater than 0.';
-      }
-      if (sec.marksPerQuestion <= 0) {
-        newErrors[`section_${idx}_marks`] = 'Marks per question must be greater than 0.';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // 4. Form Submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+    // Map rows → ISectionConfig[]
+    const sections: ISectionConfig[] = rows.map((r, idx) => ({
+      title: `Section ${String.fromCharCode(65 + idx)}: ${r.typeLabel}`,
+      type: r.backendType,
+      count: r.count,
+      marksPerQuestion: r.marks,
+      difficulty: 'Moderate',
+    }));
 
     await createAssignment({
-      title,
+      title: autoTitle,
       subject,
       grade,
       dueDate,
@@ -132,237 +151,264 @@ export default function AssignmentForm() {
     });
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
-    <form className={styles.formContainer} onSubmit={handleSubmit} noValidate>
-      {/* 1. Basic Assignment Configurations */}
-      <div className={styles.card}>
-        <div className={styles.sectionHeader}>
-          <h3>
-            <BookOpen size={18} className={styles.headerIcon} />
-            <span>Assignment Specifications</span>
-          </h3>
+    <div className={styles.pageWrapper}>
+      {/* Step progress bar */}
+      <div className={styles.stepper}>
+        <div className={`${styles.step} ${step >= 1 ? styles.stepActive : ''}`}>
+          <div className={styles.stepCircle}>
+            {step > 1 ? <Check size={13} /> : '1'}
+          </div>
+          <span>Upload Material</span>
         </div>
-
-        <div className={styles.grid}>
-          {/* Assignment Title */}
-          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-            <label className={styles.label}>ASSIGNMENT TITLE</label>
-            <input
-              type="text"
-              className={styles.input}
-              placeholder="e.g. Mid-Term Examination on Organic Chemistry"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            {errors.title && <span className={styles.errorMsg}>{errors.title}</span>}
-          </div>
-
-          {/* Subject Selector */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>SUBJECT</label>
-            <select className={styles.select} value={subject} onChange={(e) => setSubject(e.target.value)}>
-              <option value="">Select Subject</option>
-              <option value="Science (General)">Science (General)</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="Physics">Physics</option>
-              <option value="Chemistry">Chemistry</option>
-              <option value="Biology">Biology</option>
-              <option value="Computer Science">Computer Science</option>
-              <option value="History">History</option>
-              <option value="Geography">Geography</option>
-              <option value="English Literature">English Literature</option>
-            </select>
-            {errors.subject && <span className={styles.errorMsg}>{errors.subject}</span>}
-          </div>
-
-          {/* Class Grade */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>GRADE / CLASS</label>
-            <select className={styles.select} value={grade} onChange={(e) => setGrade(e.target.value)}>
-              <option value="">Select Grade</option>
-              <option value="Grade 6">Grade 6</option>
-              <option value="Grade 7">Grade 7</option>
-              <option value="Grade 8">Grade 8</option>
-              <option value="Grade 9">Grade 9</option>
-              <option value="Grade 10">Grade 10</option>
-              <option value="Grade 11">Grade 11</option>
-              <option value="Grade 12">Grade 12</option>
-              <option value="Undergraduate">Undergraduate University</option>
-            </select>
-            {errors.grade && <span className={styles.errorMsg}>{errors.grade}</span>}
-          </div>
-
-          {/* Due Date */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>DUE DATE</label>
-            <input
-              type="date"
-              className={styles.input}
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-            {errors.dueDate && <span className={styles.errorMsg}>{errors.dueDate}</span>}
-          </div>
-
-          {/* Reference Material File Upload */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>REFERENCE MATERIAL (OPTIONAL)</label>
-            {!uploadedFile && !isUploading ? (
-              <label className={styles.uploadZone}>
-                <input
-                  type="file"
-                  accept=".pdf,.txt,.docx"
-                  style={{ display: 'none' }}
-                  onChange={handleFileUpload}
-                />
-                <div className={styles.uploadIcon}>
-                  <Upload size={18} />
-                </div>
-                <div className={styles.uploadText}>
-                  <span>Click to upload PDF / text</span> or drag syllabus
-                </div>
-              </label>
-            ) : isUploading ? (
-              <div className={styles.uploadZone}>
-                <div className="animate-spin" style={{ animation: 'spin 1s linear infinite' }}>⏳</div>
-                <span className={styles.uploadText}>Parsing file content via AI...</span>
-              </div>
-            ) : (
-              <div className={styles.uploadedFileBar}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={16} />
-                  <span>{uploadedFile}</span>
-                </div>
-                <button type="button" className={styles.removeFileBtn} onClick={removeFile}>
-                  Remove
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Additional Instructions */}
-          <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-            <label className={styles.label}>ADDITIONAL INSTRUCTIONS / TOPICS</label>
-            <textarea
-              className={styles.textarea}
-              placeholder="e.g. Focus on molecular bonds and thermodynamic properties. Include 1 diagram description."
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-            />
-          </div>
+        <div className={styles.stepLine} />
+        <div className={`${styles.step} ${step >= 2 ? styles.stepActive : ''}`}>
+          <div className={styles.stepCircle}>2</div>
+          <span>Configure</span>
+        </div>
+        <div className={styles.stepLine} />
+        <div className={`${styles.step} ${step >= 3 ? styles.stepActive : ''}`}>
+          <div className={styles.stepCircle}>3</div>
+          <span>Review</span>
         </div>
       </div>
 
-      {/* 2. Structured Section Builder */}
-      <div className={styles.card}>
-        <div className={styles.sectionHeader}>
-          <h3>
-            <FileText size={18} className={styles.headerIcon} />
-            <span>Question Paper Layout</span>
-          </h3>
+      <form
+        className={styles.formContainer}
+        onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+        noValidate
+      >
+        {/* ── Section Header ── */}
+        <div className={styles.formHeader}>
+          <h2>Assignment Details</h2>
+          <p>Basic information about your assignment</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {sections.map((section, idx) => (
-            <div key={idx} className={styles.sectionCard}>
-              <div className={styles.sectionHeaderRow}>
-                {/* Editable Section Title */}
-                <input
-                  type="text"
-                  className={styles.input}
-                  style={{ fontWeight: 700, fontSize: '15px', width: '320px', padding: '6px 12px' }}
-                  value={section.title}
-                  onChange={(e) => updateSection(idx, 'title', e.target.value)}
-                />
-                <button type="button" className={styles.deleteSectionBtn} onClick={() => deleteSection(idx)}>
-                  <Trash2 size={14} />
-                  <span>Delete Section</span>
+        {/* ── File Upload Zone ── */}
+        {!uploadedFile && !isUploading && (
+          <label className={styles.uploadZone}>
+            <input
+              type="file"
+              accept=".pdf,.png,.jpg,.docx,.txt"
+              style={{ display: 'none' }}
+              onChange={handleFileUpload}
+            />
+            <div className={styles.uploadIconWrap}>
+              <Upload size={28} />
+            </div>
+            <p className={styles.uploadTitle}>Choose a file or drag &amp; drop it here</p>
+            <p className={styles.uploadSubtitle}>PDF, PNG, and DOCX</p>
+            <div className={styles.browseBtn}>Browse Files</div>
+            <p className={styles.uploadCaption}>Upload images of your preferred document/image</p>
+          </label>
+        )}
+
+        {isUploading && (
+          <div className={styles.uploadZone}>
+            <div style={{ fontSize: 28 }}>⏳</div>
+            <p className={styles.uploadTitle}>Parsing file...</p>
+          </div>
+        )}
+
+        {uploadedFile && (
+          <div className={styles.uploadedFileBar}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileText size={16} />
+              <span>{uploadedFile}</span>
+            </div>
+            <button type="button" className={styles.removeFileBtn} onClick={() => setUploadedFile(null)}>
+              Remove
+            </button>
+          </div>
+        )}
+
+        {/* ── Subject & Grade (hidden from UI but needed for generation) ── */}
+        {/* Compact inline row matching Figma's clean layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label className={styles.fieldLabel}>Subject</label>
+            <select
+              className={styles.typeSelect}
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            >
+              <option value="">Select Subject</option>
+              <option>Science (General)</option>
+              <option>Mathematics</option>
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Biology</option>
+              <option>Computer Science</option>
+              <option>History</option>
+              <option>Geography</option>
+              <option>English Literature</option>
+            </select>
+            {errors.subject && <span className={styles.errorMsg}>{errors.subject}</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label className={styles.fieldLabel}>Grade / Class</label>
+            <select
+              className={styles.typeSelect}
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            >
+              <option value="">Select Grade</option>
+              <option>Grade 6</option>
+              <option>Grade 7</option>
+              <option>Grade 8</option>
+              <option>Grade 9</option>
+              <option>Grade 10</option>
+              <option>Grade 11</option>
+              <option>Grade 12</option>
+              <option>Undergraduate</option>
+            </select>
+            {errors.grade && <span className={styles.errorMsg}>{errors.grade}</span>}
+          </div>
+        </div>
+
+        {/* ── Due Date ── */}
+        <div className={styles.dueDateRow}>
+          <label className={styles.fieldLabel}>Due Date</label>
+          <div className={styles.dateInputWrap}>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              placeholder="DD-MM-YYYY"
+            />
+            <Calendar size={16} className={styles.calendarIcon} />
+          </div>
+          {errors.dueDate && <span className={styles.errorMsg}>{errors.dueDate}</span>}
+        </div>
+
+        {/* ── Question Type Table ── */}
+        <div className={styles.tableSection}>
+          {/* Table header */}
+          <div className={styles.tableHeader}>
+            <span className={styles.tableHeaderCell}>Question Type</span>
+            <span />
+            <span className={styles.tableHeaderCell}>No. of Questions</span>
+            <span className={styles.tableHeaderCell}>Marks</span>
+          </div>
+
+          {/* Table rows */}
+          {rows.map((row) => (
+            <div key={row.id} className={styles.tableRow}>
+              {/* Type selector */}
+              <select
+                className={styles.typeSelect}
+                value={row.typeLabel}
+                onChange={(e) => updateRowType(row.id, e.target.value)}
+              >
+                {QUESTION_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.label} value={opt.label}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Remove button */}
+              <button
+                type="button"
+                className={styles.removeBtn}
+                onClick={() => removeRow(row.id)}
+                aria-label="Remove row"
+              >
+                <X size={14} />
+              </button>
+
+              {/* No. of Questions counter */}
+              <div className={styles.counterControl}>
+                <button type="button" className={styles.counterBtn} onClick={() => adjustCount(row.id, 'count', -1)}>
+                  −
+                </button>
+                <span className={styles.counterVal}>{row.count}</span>
+                <button type="button" className={styles.counterBtn} onClick={() => adjustCount(row.id, 'count', 1)}>
+                  +
                 </button>
               </div>
 
-              <div className={styles.sectionControls}>
-                {/* Question Type */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>QUESTION TYPE</label>
-                  <select
-                    className={styles.select}
-                    value={section.type}
-                    onChange={(e) => updateSection(idx, 'type', e.target.value)}
-                  >
-                    <option value="MCQ">Multiple Choice (MCQ)</option>
-                    <option value="Short">Short Answer (Short)</option>
-                    <option value="Long">Descriptive Essay (Long)</option>
-                  </select>
-                </div>
-
-                {/* Number of Questions */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>NUMBER OF QUESTIONS</label>
-                  <div className={styles.counterGroup}>
-                    <button type="button" className={styles.counterBtn} onClick={() => incrementCount(idx, 'count', -1)}>-</button>
-                    <span className={styles.counterValue}>{section.count}</span>
-                    <button type="button" className={styles.counterBtn} onClick={() => incrementCount(idx, 'count', 1)}>+</button>
-                  </div>
-                </div>
-
-                {/* Marks per Question */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>MARKS PER QUESTION</label>
-                  <div className={styles.counterGroup}>
-                    <button type="button" className={styles.counterBtn} onClick={() => incrementCount(idx, 'marksPerQuestion', -1)}>-</button>
-                    <span className={styles.counterValue}>{section.marksPerQuestion}</span>
-                    <button type="button" className={styles.counterBtn} onClick={() => incrementCount(idx, 'marksPerQuestion', 1)}>+</button>
-                  </div>
-                </div>
-
-                {/* Difficulty Selector */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>DIFFICULTY TARGET</label>
-                  <div className={styles.difficultyGroup}>
-                    {['Easy', 'Moderate', 'Hard'].map((diff) => (
-                      <div
-                        key={diff}
-                        className={`${styles.diffBadgeOption} ${
-                          diff === 'Easy' ? styles.diffEasy : diff === 'Moderate' ? styles.diffModerate : styles.diffHard
-                        } ${section.difficulty === diff ? styles.selected : ''}`}
-                        onClick={() => updateSection(idx, 'difficulty', diff)}
-                      >
-                        {diff}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* Marks counter */}
+              <div className={styles.counterControl}>
+                <button type="button" className={styles.counterBtn} onClick={() => adjustCount(row.id, 'marks', -1)}>
+                  −
+                </button>
+                <span className={styles.counterVal}>{row.marks}</span>
+                <button type="button" className={styles.counterBtn} onClick={() => adjustCount(row.id, 'marks', 1)}>
+                  +
+                </button>
               </div>
             </div>
           ))}
 
-          {errors.sections && <span className={styles.errorMsg}>{errors.sections}</span>}
+          {errors.rows && <span className={styles.errorMsg} style={{ display: 'block', marginTop: 8 }}>{errors.rows}</span>}
 
-          {/* Add Section Button */}
-          <button type="button" className={styles.addSectionBtn} onClick={addSection}>
-            <Plus size={16} />
-            <span>Add Section Category</span>
+          {/* Add question type */}
+          <button type="button" className={styles.addTypeBtn} onClick={addRow}>
+            <span className={styles.addCircle}>
+              <Plus size={14} />
+            </span>
+            <span>Add question type</span>
           </button>
         </div>
-      </div>
 
-      {/* Global Server Error Logs */}
-      {errorMessage && (
-        <div className={styles.globalError}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={18} />
-            <span>{errorMessage}</span>
+        {/* ── Totals Summary ── */}
+        <div className={styles.totalsSummary}>
+          <div className={styles.totalItem}>
+            Total Questions: <span>{totalQuestions}</span>
+          </div>
+          <div className={styles.totalItem}>
+            Total Marks: <span>{totalMarks}</span>
           </div>
         </div>
-      )}
 
-      {/* Submit Button */}
-      <div className={styles.submitRow}>
-        <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-          <Sparkles size={16} />
-          <span>{isLoading ? 'Sending Request...' : 'Generate Exam Paper with AI'}</span>
-        </button>
-      </div>
-    </form>
+        {/* ── Additional Information ── */}
+        <div className={styles.additionalSection}>
+          <label className={styles.fieldLabel}>Additional Information (For better output)</label>
+          <div className={styles.textareaWrap}>
+            <textarea
+              className={styles.textarea}
+              placeholder="e.g. Generate a question paper for 3 hour exam duration..."
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={3}
+            />
+            <Mic size={16} className={styles.micIcon} />
+          </div>
+        </div>
+
+        {/* ── Global Error ── */}
+        {errorMessage && (
+          <div className={styles.globalError}>
+            <AlertCircle size={16} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        {/* ── Footer Navigation ── */}
+        <div className={styles.navFooter}>
+          <button
+            type="button"
+            className={styles.prevBtn}
+            onClick={() => setCreationForm(false)}
+          >
+            <ArrowLeft size={16} />
+            <span>Previous</span>
+          </button>
+
+          <button
+            type="submit"
+            className={styles.nextBtn}
+            disabled={isLoading}
+          >
+            <span>{isLoading ? 'Generating...' : 'Next'}</span>
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
