@@ -1,329 +1,349 @@
-.container {
+.wrapper {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 900px;
+  gap: 16px;
+  max-width: 860px;
   margin: 0 auto;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Floating Actions Bar */
-.actionsBar {
-  background-color: var(--bg-card);
+/* AI Greeting Banner */
+.aiBanner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  padding: 14px 24px;
+  padding: 16px 22px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow-sm);
+  align-items: flex-start;
+  gap: 16px;
 }
 
-.actionsLeft {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.aiMessage {
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.55;
+  font-style: italic;
+  flex: 1;
 }
 
-.titleHint {
-  font-size: 12px;
-  color: var(--muted);
+.aiMessage strong {
+  color: #f8fafc;
+  font-style: normal;
 }
 
-.actionsRight {
-  display: flex;
-  gap: 12px;
-}
-
-.btn {
+.downloadBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  gap: 7px;
+  background: white;
+  color: #0f172a;
+  padding: 9px 16px;
   border-radius: var(--radius-sm);
   font-size: 13px;
+  font-weight: 700;
   font-family: var(--font-display);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.downloadBtn:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+/* Action bar (secondary row) */
+.actionsBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
   font-weight: 600;
+  font-family: var(--font-display);
   transition: all var(--transition-fast);
 }
 
-.btnPrimary {
-  background-color: #1e293b;
-  color: white;
+.regenBtn {
+  background: #fff0eb;
+  color: var(--brand-orange);
+  border: 1px solid #ffd5c2;
 }
-.btnPrimary:hover {
-  background-color: #0f172a;
+.regenBtn:hover {
+  background: #ffd5c2;
 }
 
-.btnSecondary {
-  background-color: #f1f5f9;
+.printBtn {
+  background: var(--bg-hover);
   color: var(--secondary);
   border: 1px solid var(--border);
 }
-.btnSecondary:hover {
-  background-color: var(--border);
-  color: var(--primary);
+.printBtn:hover {
+  background: var(--border);
 }
 
-.btnRegen {
-  background-color: #fff0eb;
-  color: var(--brand-orange);
-  border: 1px solid #ffe1d6;
-}
-.btnRegen:hover {
-  background-color: #ffe1d6;
-}
-
-/* Printable Exam Card Sheet */
-.paperSheet {
-  background-color: #ffffff;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
-  padding: 60px 80px; /* Exam-like large spacing margins */
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
+/* ── Printable Exam Sheet ── */
+.paper {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 48px 60px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 14px;
+  color: #111;
   position: relative;
-  overflow: hidden;
-  font-family: 'Times New Roman', Times, serif; /* Pure Exam style font choice */
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
 }
 
-/* Sub-watermark watermark text background */
+/* Watermark */
 .watermark {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 64px;
+  font-weight: 900;
   font-family: var(--font-display);
-  font-size: 72px;
-  font-weight: 800;
-  color: rgba(255, 90, 54, 0.035);
+  color: rgba(255, 90, 54, 0.03);
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
 }
 
-.paperHeader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* School Header */
+.schoolHeader {
   text-align: center;
-  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.paperTitle {
-  font-size: 24px;
+.schoolName {
+  font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #000;
+  margin-bottom: 2px;
 }
 
-.paperMeta {
-  font-size: 13px;
-  color: var(--secondary);
-  display: flex;
-  gap: 16px;
+.subjectLine {
+  font-size: 13.5px;
+  color: #333;
 }
 
-.divider {
+/* Dividers */
+.boldRule {
   border: none;
-  border-top: 2px solid #334155;
-  width: 100%;
+  border-top: 2px solid #000;
+  margin: 8px 0;
 }
 
-/* Student Information Block */
-.studentBox {
-  border: 1px solid #475569;
-  padding: 16px;
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 20px;
-  background-color: #ffffff;
+.thinRule {
+  border: none;
+  border-top: 1px solid #555;
+  margin: 8px 0;
+}
+
+/* Time / Marks Row */
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin: 8px 0;
+  color: #222;
+}
+
+/* General Instructions */
+.generalInstructions {
+  font-size: 12.5px;
+  font-style: italic;
+  color: #444;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Student Info */
+.studentFields {
+  display: flex;
+  gap: 32px;
+  margin: 14px 0;
+  font-size: 13px;
 }
 
 .studentField {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
   display: flex;
   align-items: center;
   gap: 6px;
+  font-weight: 700;
 }
 
-.studentInputLine {
-  flex: 1;
+.fieldLine {
   border: none;
-  border-bottom: 1px dotted #1e293b;
-  background-color: transparent;
-  font-size: 14px;
-  color: #0f172a;
-  padding: 2px 4px;
+  border-bottom: 1px solid #333;
+  background: transparent;
+  font-size: 13px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #000;
+  padding: 0 4px 1px;
+  min-width: 140px;
 }
+.fieldLine:focus { outline: none; border-bottom-color: var(--brand-orange); }
 
-.studentInputLine:focus {
-  outline: none;
-  border-bottom-style: solid;
-}
-
-.instructionsBlock {
-  font-size: 12px;
-  line-height: 1.5;
-  color: #334155;
-  text-align: justify;
-}
-
-.instructionsTitle {
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.marksSummary {
-  font-size: 14px;
-  font-weight: 700;
-  text-align: right;
-  color: #0f172a;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-}
-
-/* Sections */
+/* Section Blocks */
 .sectionBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.sectionHeader {
-  border-bottom: 1.5px solid #1e293b;
-  padding-bottom: 6px;
+  margin-top: 22px;
 }
 
 .sectionTitle {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: #0f172a;
   text-transform: uppercase;
+  text-decoration: underline;
+  margin-bottom: 4px;
+  color: #000;
+}
+
+.sectionType {
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #111;
 }
 
 .sectionInstruction {
-  font-size: 12px;
-  color: var(--secondary);
+  font-size: 12.5px;
   font-style: italic;
-  margin-top: 2px;
+  color: #555;
+  margin-bottom: 12px;
 }
 
-.questionsList {
+/* Questions */
+.questionItem {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.questionRow {
-  display: grid;
-  grid-template-columns: 24px 1fr auto;
   gap: 8px;
-  align-items: start;
+  margin-bottom: 14px;
+  align-items: flex-start;
 }
 
-.questionNum {
-  font-size: 14px;
+.qNum {
   font-weight: 700;
-  color: #0f172a;
+  min-width: 22px;
+  flex-shrink: 0;
+  color: #000;
 }
 
-.questionContent {
+.qBody {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.questionText {
-  font-size: 14.5px;
-  color: #1e293b;
+.qText {
   line-height: 1.5;
+  color: #111;
 }
 
-.questionMarks {
-  font-size: 13.5px;
+.qMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Difficulty Badges — inline style matching Figma */
+.tag {
+  font-size: 10.5px;
   font-weight: 700;
-  color: #0f172a;
-  white-space: nowrap;
+  font-family: var(--font-sans);
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: capitalize;
 }
 
-/* MCQ Options layout matching 2x2 grid */
+.tagEasy { background: #dcfce7; color: #166534; }
+.tagModerate { background: #fef9c3; color: #713f12; }
+.tagHard { background: #fee2e2; color: #991b1b; }
+
+.qMarks {
+  font-size: 12px;
+  font-style: italic;
+  color: #555;
+  margin-left: auto;
+}
+
+/* MCQ Options */
 .mcqGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 6px;
-  padding-left: 4px;
-}
-
-.mcqOption {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  color: #334155;
-}
-
-.mcqLetter {
-  font-weight: 700;
-  color: #0f172a;
-}
-
-/* Badges showing difficulty levels */
-.tagRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
   margin-top: 4px;
 }
 
-.diffBadge {
-  font-size: 10px;
+.mcqOpt {
+  font-size: 13px;
+  color: #333;
+}
+
+/* End of Paper */
+.endLine {
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  color: #666;
+  margin-top: 24px;
+  border-top: 1px solid #ccc;
+  padding-top: 12px;
+}
+
+/* Answer Key */
+.answerKey {
+  margin-top: 28px;
+  border-top: 2px solid #000;
+  padding-top: 16px;
+}
+
+.answerKeyTitle {
+  font-size: 15px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
+  text-decoration: underline;
+  margin-bottom: 12px;
+  color: #000;
 }
 
-.badgeEasy {
-  background-color: var(--color-easy-bg);
-  color: var(--color-easy-text);
-}
-.badgeModerate {
-  background-color: var(--color-moderate-bg);
-  color: var(--color-moderate-text);
-}
-.badgeHard {
-  background-color: var(--color-hard-bg);
-  color: var(--color-hard-text);
+.answerList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Print Overrides */
+.answerItem {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: #222;
+  line-height: 1.5;
+}
+
+.answerNum {
+  font-weight: 700;
+  min-width: 22px;
+  flex-shrink: 0;
+}
+
+/* Print overrides */
 @media print {
-  .actionsBar {
-    display: none !important;
-  }
-  .paperSheet {
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-  }
+  .actionsBar, .aiBanner { display: none !important; }
+  .paper { border: none; box-shadow: none; padding: 0; }
 }
 
 @media (max-width: 768px) {
-  .paperSheet {
-    padding: 30px 24px;
-  }
-  .studentBox {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .mcqGrid {
-    grid-template-columns: 1fr;
-  }
+  .paper { padding: 28px 20px; }
+  .studentFields { flex-direction: column; gap: 12px; }
+  .mcqGrid { grid-template-columns: 1fr; }
+  .aiBanner { flex-direction: column; }
 }

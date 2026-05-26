@@ -1,209 +1,222 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Printer, Download, RotateCw, CheckCircle, FileText } from 'lucide-react';
+import { Download, RotateCw, Printer } from 'lucide-react';
 import { useAssignmentStore, ISection } from '../store/assignmentStore';
 import styles from './QuestionPaperView.module.css';
 
 export default function QuestionPaperView() {
   const { activeAssignment, regenerateAssignment, isLoading } = useAssignmentStore();
 
-  // Student details input states
   const [studentName, setStudentName] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
-  const [sectionCode, setSectionCode] = useState('');
+  const [rollNo, setRollNo] = useState('');
+  const [classSec, setClassSec] = useState('');
 
   if (!activeAssignment) return null;
 
-  // Calculate total marks dynamically
+  // ── Computed totals ────────────────────────────────────────────────────────
   let totalMarks = 0;
+  let totalQuestions = 0;
   activeAssignment.sections.forEach((s) => {
     s.questions.forEach((q) => {
       totalMarks += q.marks;
+      totalQuestions++;
     });
   });
 
-  const handlePrint = () => {
-    window.print();
-  };
+  // ── Collect MCQ correct answers for answer key ─────────────────────────────
+  const hasAnswerKey = activeAssignment.sections.some((s) =>
+    s.questions.some((q) => q.correctAnswer)
+  );
 
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleDownloadPDF = () => {
-    // Standard file transfer download linking directly to PDF Kit Stream
     window.open(`http://localhost:5000/api/assignments/${activeAssignment._id}/pdf`, '_blank');
   };
 
   const handleRegenerate = async () => {
-    if (confirm('Are you sure you want to regenerate all questions for this assignment? This will replace current questions.')) {
+    if (confirm('Regenerate all questions for this assignment? Current questions will be replaced.')) {
       await regenerateAssignment(activeAssignment._id);
     }
   };
 
+  // ── Difficulty tag class ───────────────────────────────────────────────────
+  const tagClass = (d: string) =>
+    d === 'Easy' ? styles.tagEasy : d === 'Moderate' ? styles.tagModerate : styles.tagHard;
+
+  // ── Build a flat question list with running numbers ────────────────────────
+  let globalQNum = 0;
+
   return (
-    <div className={styles.container}>
-      {/* 1. floating Header Actions bar */}
-      <div className={styles.actionsBar}>
-        <div className={styles.actionsLeft}>
-          <span className={styles.titleHint}>ACTIVE ASSESSMENT VIEW</span>
-          <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} style={{ color: 'var(--brand-orange)' }} />
-            <span>{activeAssignment.title}</span>
-          </h2>
-        </div>
-
-        <div className={styles.actionsRight}>
-          <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={handlePrint}>
-            <Printer size={16} />
-            <span>Print Sheet</span>
-          </button>
-          
-          <button className={`${styles.btn} ${styles.btnRegen}`} onClick={handleRegenerate} disabled={isLoading}>
-            <RotateCw size={16} className={isLoading ? 'animate-spin' : ''} />
-            <span>{isLoading ? 'Regenerating...' : 'Regenerate'}</span>
-          </button>
-
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleDownloadPDF}>
-            <Download size={16} />
-            <span>Download PDF</span>
-          </button>
-        </div>
+    <div className={styles.wrapper}>
+      {/* 1. AI Greeting Banner */}
+      <div className={styles.aiBanner}>
+        <p className={styles.aiMessage}>
+          <strong>Certainly!</strong> Here is a customized Question Paper for your{' '}
+          <strong>{activeAssignment.subject}</strong> class on <strong>{activeAssignment.grade}</strong>.
+          {activeAssignment.additionalInstructions
+            ? ` Based on your instructions: "${activeAssignment.additionalInstructions.slice(0, 120)}…"`
+            : ' The paper is structured with sections and difficulty-tagged questions for easy grading.'}
+        </p>
+        <button className={styles.downloadBtn} onClick={handleDownloadPDF}>
+          <Download size={14} />
+          Download as PDF
+        </button>
       </div>
 
-      {/* 2. Structured Printable Exam Paper Sheet */}
-      <article className={styles.paperSheet}>
-        {/* Background Subtle Watermark */}
-        <div className={styles.watermark}>VEDA AI EXAM SYSTEM</div>
+      {/* 2. Secondary action row */}
+      <div className={styles.actionsBar}>
+        <button className={`${styles.actionBtn} ${styles.printBtn}`} onClick={() => window.print()}>
+          <Printer size={14} />
+          Print
+        </button>
+        <button
+          className={`${styles.actionBtn} ${styles.regenBtn}`}
+          onClick={handleRegenerate}
+          disabled={isLoading}
+        >
+          <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} />
+          {isLoading ? 'Regenerating…' : 'Regenerate'}
+        </button>
+      </div>
 
-        {/* Paper Header */}
-        <header className={styles.paperHeader}>
-          <h1 className={styles.paperTitle}>{activeAssignment.title}</h1>
-          <div className={styles.paperMeta}>
-            <span><strong>SUBJECT:</strong> {activeAssignment.subject.toUpperCase()}</span>
-            <span><strong>CLASS LEVEL:</strong> {activeAssignment.grade.toUpperCase()}</span>
-            <span><strong>DATE:</strong> {new Date(activeAssignment.dueDate).toLocaleDateString()}</span>
+      {/* 3. Printable Exam Sheet */}
+      <article className={styles.paper}>
+        <div className={styles.watermark}>VEDA AI</div>
+
+        {/* School Header */}
+        <div className={styles.schoolHeader}>
+          <div className={styles.schoolName}>Delhi Public School, Sector-4, Bokaro</div>
+          <div className={styles.subjectLine}>
+            Subject: {activeAssignment.subject} &nbsp;|&nbsp; Class: {activeAssignment.grade}
           </div>
-          <hr className={styles.divider} />
-        </header>
+        </div>
 
-        {/* Student metadata input block matching Figma */}
-        <section className={styles.studentBox}>
+        <hr className={styles.boldRule} />
+
+        {/* Time & Marks */}
+        <div className={styles.metaRow}>
+          <span>Time Allowed: 45 minutes</span>
+          <span>Maximum Marks: {totalMarks}</span>
+        </div>
+
+        <hr className={styles.thinRule} />
+
+        {/* General Instructions */}
+        <p className={styles.generalInstructions}>
+          {activeAssignment.additionalInstructions ||
+            'All questions are compulsory unless stated otherwise.'}
+        </p>
+
+        {/* Student Fields */}
+        <div className={styles.studentFields}>
           <div className={styles.studentField}>
-            <span>STUDENT NAME:</span>
+            <span>Name:</span>
             <input
+              className={styles.fieldLine}
               type="text"
-              placeholder="Enter full name"
-              className={styles.studentInputLine}
+              placeholder="__________________________"
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
             />
           </div>
           <div className={styles.studentField}>
-            <span>ROLL NO:</span>
+            <span>Roll Number:</span>
             <input
+              className={styles.fieldLine}
               type="text"
-              placeholder="e.g. 45"
-              className={styles.studentInputLine}
-              value={rollNumber}
-              onChange={(e) => setRollNumber(e.target.value)}
+              placeholder="________"
+              value={rollNo}
+              onChange={(e) => setRollNo(e.target.value)}
+              style={{ minWidth: 80 }}
             />
           </div>
           <div className={styles.studentField}>
-            <span>SECTION:</span>
+            <span>Class/Sec:</span>
             <input
+              className={styles.fieldLine}
               type="text"
-              placeholder="e.g. A"
-              className={styles.studentInputLine}
-              value={sectionCode}
-              onChange={(e) => setSectionCode(e.target.value)}
+              placeholder="______"
+              value={classSec}
+              onChange={(e) => setClassSec(e.target.value)}
+              style={{ minWidth: 64 }}
             />
           </div>
-        </section>
-
-        {/* Instructions Block */}
-        {activeAssignment.additionalInstructions && (
-          <section className={styles.instructionsBlock}>
-            <div className={styles.instructionsTitle}>GENERAL INSTRUCTIONS:</div>
-            <p style={{ fontStyle: 'italic' }}>{activeAssignment.additionalInstructions}</p>
-          </section>
-        )}
-
-        {/* Total Marks display */}
-        <div className={styles.marksSummary}>
-          <span>TOTAL MARKS: {totalMarks}</span>
         </div>
 
-        {/* Rendering Sections */}
-        {activeAssignment.sections && activeAssignment.sections.length > 0 ? (
-          activeAssignment.sections.map((section: ISection, sIdx: number) => (
-            <section key={section._id || sIdx} className={styles.sectionBlock}>
-              {/* Section Divider */}
-              <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>{section.title}</h3>
-                <p className={styles.sectionInstruction}>Instruction: {section.instruction}</p>
-              </div>
+        <hr className={styles.boldRule} />
 
-              {/* Questions Loop */}
-              <div className={styles.questionsList}>
-                {section.questions.map((question, qIdx) => (
-                  <div key={question._id || qIdx} className={styles.questionRow}>
-                    {/* Index */}
-                    <span className={styles.questionNum}>{qIdx + 1}.</span>
+        {/* Question Sections */}
+        {activeAssignment.sections.map((section: ISection, sIdx: number) => {
+          const sectionLabel = String.fromCharCode(65 + sIdx); // A, B, C…
+          return (
+            <div key={section._id || sIdx} className={styles.sectionBlock}>
+              {/* Section heading */}
+              <div className={styles.sectionTitle}>Section {sectionLabel}</div>
+              <div className={styles.sectionInstruction}>{section.instruction}</div>
 
-                    {/* Question Content */}
-                    <div className={styles.questionContent}>
-                      <p className={styles.questionText}>{question.text}</p>
-                      
-                      {/* MCQ Grid if options are available */}
-                      {question.options && question.options.length > 0 && (
+              {/* Questions */}
+              {section.questions.map((q, qIdx) => {
+                globalQNum++;
+                return (
+                  <div key={q._id || qIdx} className={styles.questionItem}>
+                    <span className={styles.qNum}>{globalQNum}.</span>
+                    <div className={styles.qBody}>
+                      <span className={styles.qText}>{q.text}</span>
+
+                      {/* MCQ Options */}
+                      {q.options && q.options.length > 0 && (
                         <div className={styles.mcqGrid}>
-                          {question.options.map((opt, oIdx) => (
-                            <div key={oIdx} className={styles.mcqOption}>
-                              <span className={styles.mcqLetter}>{String.fromCharCode(65 + oIdx)})</span>
-                              <span>{opt}</span>
-                            </div>
+                          {q.options.map((opt, oIdx) => (
+                            <span key={oIdx} className={styles.mcqOpt}>
+                              ({String.fromCharCode(97 + oIdx)}) {opt}
+                            </span>
                           ))}
                         </div>
                       )}
 
-                      {/* Question tags showing difficulty badges */}
-                      <div className={`${styles.tagRow} no-print`}>
-                        <span
-                          className={`${styles.diffBadge} ${
-                            question.difficulty === 'Easy'
-                              ? styles.badgeEasy
-                              : question.difficulty === 'Moderate'
-                              ? styles.badgeModerate
-                              : styles.badgeHard
-                          }`}
-                        >
-                          {question.difficulty}
+                      {/* Tags + Marks */}
+                      <div className={styles.qMeta}>
+                        <span className={`${styles.tag} ${tagClass(q.difficulty)}`}>
+                          {q.difficulty}
                         </span>
-                        {question.correctAnswer && (
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              color: '#166534',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <CheckCircle size={10} />
-                            <span>Correct: {question.correctAnswer}</span>
-                          </span>
-                        )}
+                        <span className={styles.qMarks}>[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                       </div>
                     </div>
-
-                    {/* Marks right aligned */}
-                    <span className={styles.questionMarks}>[{question.marks} M]</span>
                   </div>
-                ))}
-              </div>
-            </section>
-          ))
-        ) : (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '40px 0' }}>
-            No question sections available on this assignment.
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* End of Paper */}
+        <div className={styles.endLine}>— End of Question Paper —</div>
+
+        {/* Answer Key (MCQ only) */}
+        {hasAnswerKey && (
+          <div className={styles.answerKey}>
+            <div className={styles.answerKeyTitle}>Answer Key</div>
+            <div className={styles.answerList}>
+              {(() => {
+                let num = 0;
+                return activeAssignment.sections.flatMap((s) =>
+                  s.questions
+                    .filter((q) => q.correctAnswer)
+                    .map((q) => {
+                      num++;
+                      return (
+                        <div key={num} className={styles.answerItem}>
+                          <span className={styles.answerNum}>{num}.</span>
+                          <span>
+                            {q.correctAnswer}
+                          </span>
+                        </div>
+                      );
+                    })
+                );
+              })()}
+            </div>
           </div>
         )}
       </article>
