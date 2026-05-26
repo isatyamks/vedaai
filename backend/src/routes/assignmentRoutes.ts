@@ -3,15 +3,25 @@ import Assignment from '../models/Assignment';
 import { assessmentQueue, redisAvailable } from '../config/queue';
 import { processGenerationJob } from '../workers/generationWorker';
 import { generateAssignmentPDF } from '../services/pdfService';
+import {
+  cacheGet, cacheSet, cacheDelete, cacheDeletePrefix,
+  CK, getCacheTTL, getCacheStats,
+} from '../services/cacheService';
 
 const router = Router();
+const TTL = getCacheTTL();
 
-/**
- * GET /api/assignments
- */
+// ── GET /api/assignments ────────────────────────────────────────────────────
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Try cache first
+    const cached = await cacheGet<any[]>(CK.assignmentList);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     const assignments = await Assignment.find().sort({ createdAt: -1 });
+    await cacheSet(CK.assignmentList, assignments, TTL.list);
     return res.status(200).json(assignments);
   } catch (error: any) {
     console.error('[Routes] Error listing assignments:', error);
@@ -19,13 +29,25 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * GET /api/assignments/:id
- */
+// ── GET /api/assignments/:id ────────────────────────────────────────────────
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const assignment = await Assignment.findById(req.params.id);
+    const { id } = req.params;
+    const cacheKey = CK.assignment(id);
+
+    const cached = await cacheGet<any>(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
+    const assignment = await Assignment.findById(id);
     if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
+
+    // Only cache completed/failed assignments (in-progress ones change frequently)
+    if (assignment.status === 'completed' || assignment.status === 'failed') {
+      await cacheSet(cacheKey, assignment, TTL.detail);
+    }
+
     return res.status(200).json(assignment);
   } catch (error: any) {
     console.error('[Routes] Error finding assignment:', error);
@@ -33,15 +55,12 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * POST /api/assignments
- * Creates an assignment and either queues or synchronously processes the generation job.
- */
+// ── POST /api/assignments ────────────────────────────────────────────────────
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { title, subject, grade, dueDate, additionalInstructions, sections } = req.body;
 
-    // ── Validation ──────────────────────────────────────────────────────────
+    // Validation
     if (!title?.trim()) return res.status(400).json({ error: 'Assignment title is required.' });
     if (!subject?.trim()) return res.status(400).json({ error: 'Subject area is required.' });
     if (!grade?.trim()) return res.status(400).json({ error: 'Grade is required.' });
@@ -57,7 +76,6 @@ router.post('/', async (req: Request, res: Response) => {
       if (!['Easy', 'Moderate', 'Hard'].includes(s.difficulty)) return res.status(400).json({ error: `Section ${i + 1} has invalid difficulty.` });
     }
 
-    // ── Save placeholder ─────────────────────────────────────────────────────
     const assignment = new Assignment({
       title,
       subject,
@@ -71,26 +89,25 @@ router.post('/', async (req: Request, res: Response) => {
     await assignment.save();
     const assignmentId = assignment._id.toString();
 
-    // ── Queue or process synchronously ────────────────────────────────────────
+    // Invalidate list cache when a new assignment is created
+    await cacheDelete(CK.assignmentList);
+
     if (redisAvailable && assessmentQueue) {
-      console.log(`[Routes] Queueing job (Redis mode) for assignment: ${assignmentId}`);
+      console.log(`[Routes] Queueing job (Redis) for: ${assignmentId}`);
       await assessmentQueue.add('generate-questions', { assignmentId, sectionConfigs: sections });
     } else {
-      console.log(`[Routes] Processing job SYNCHRONOUSLY (no Redis) for assignment: ${assignmentId}`);
-      // Run in background without blocking the HTTP response
+      console.log(`[Routes] Processing synchronously (no Redis) for: ${assignmentId}`);
       setImmediate(() => processGenerationJob(assignmentId, sections));
     }
 
     return res.status(201).json(assignment);
   } catch (error: any) {
     console.error('[Routes] Error creating assignment:', error);
-    return res.status(500).json({ error: 'Failed to create and queue assignment.' });
+    return res.status(500).json({ error: 'Failed to create assignment.' });
   }
 });
 
-/**
- * POST /api/assignments/:id/regenerate
- */
+// ── POST /api/assignments/:id/regenerate ─────────────────────────────────────
 router.post('/:id/regenerate', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -113,7 +130,9 @@ router.post('/:id/regenerate', async (req: Request, res: Response) => {
       });
     }
 
-    if (!configsToUse.length) return res.status(400).json({ error: 'No section configs available to regenerate.' });
+    if (!configsToUse.length) {
+      return res.status(400).json({ error: 'No section configs available to regenerate.' });
+    }
 
     assignment.status = 'queued';
     assignment.progress = 0;
@@ -121,12 +140,14 @@ router.post('/:id/regenerate', async (req: Request, res: Response) => {
     assignment.errorMessage = undefined;
     await assignment.save();
 
-    const assignmentId = id;
+    // Invalidate both the specific assignment cache and the list
+    await cacheDelete(CK.assignment(id));
+    await cacheDelete(CK.assignmentList);
 
     if (redisAvailable && assessmentQueue) {
-      await assessmentQueue.add('generate-questions', { assignmentId, sectionConfigs: configsToUse });
+      await assessmentQueue.add('generate-questions', { assignmentId: id, sectionConfigs: configsToUse });
     } else {
-      setImmediate(() => processGenerationJob(assignmentId, configsToUse));
+      setImmediate(() => processGenerationJob(id, configsToUse));
     }
 
     return res.status(200).json(assignment);
@@ -136,19 +157,24 @@ router.post('/:id/regenerate', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * GET /api/assignments/:id/pdf
- */
+// ── GET /api/assignments/:id/pdf ─────────────────────────────────────────────
 router.get('/:id/pdf', async (req: Request, res: Response) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
-    if (assignment.status !== 'completed') return res.status(400).json({ error: 'PDF can only be generated for completed assessments.' });
+    if (assignment.status !== 'completed') {
+      return res.status(400).json({ error: 'PDF can only be generated for completed assessments.' });
+    }
     return generateAssignmentPDF(assignment, res);
   } catch (error: any) {
     console.error('[Routes] Error generating PDF:', error);
     return res.status(500).json({ error: 'Failed to generate PDF.' });
   }
+});
+
+// ── GET /api/assignments/cache/stats ─────────────────────────────────────────
+router.get('/cache/stats', (_req: Request, res: Response) => {
+  res.json({ ...getCacheStats(), redisAvailable });
 });
 
 export default router;
