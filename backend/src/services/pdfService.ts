@@ -65,7 +65,7 @@ export async function generateAssignmentPDF(
       .font(SERIF_BOLD)
       .fontSize(16)
       .fillColor('#000000')
-      .text('Delhi Public School, Sector-4, Bokaro', PAGE.marginLeft, y, {
+      .text(assignment.title, PAGE.marginLeft, y, {
         width: CONTENT_WIDTH,
         align: 'center',
       });

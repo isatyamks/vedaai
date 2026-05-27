@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAssignmentStore } from '../../../store/assignmentStore';
 import QuestionPaperView from '../../../components/QuestionPaperView';
-import styles from '../../page.module.css';
+import styles from '../../assignments/page.module.css';
 
 export default function AssignmentDetailPage() {
   const { id } = useParams() as { id: string };

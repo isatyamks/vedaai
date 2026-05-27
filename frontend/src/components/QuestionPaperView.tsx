@@ -93,7 +93,7 @@ export default function QuestionPaperView() {
         <div className={styles.watermark} aria-hidden="true">VEDA AI</div>
 
         <header className={styles.schoolHeader}>
-          <div className={styles.schoolName}>Delhi Public School, Sector-4, Bokaro</div>
+          <div className={styles.schoolName}>{activeAssignment.title}</div>
           <div className={styles.subjectLine}>
             Subject: {activeAssignment.subject}&nbsp;|&nbsp;Class: {activeAssignment.grade}
             {sets.length > 1 && (
