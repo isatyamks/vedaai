@@ -184,6 +184,20 @@
   transition: border-color var(--transition-fast);
 }
 
+.dateInput::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  z-index: 2;
+}
+
 .dateInput:focus {
   outline: none;
   border-color: var(--brand-orange);
@@ -197,6 +211,7 @@
   transform: translateY(-50%);
   color: var(--muted);
   pointer-events: none;
+  z-index: 1;
 }
 
 .tableSection {

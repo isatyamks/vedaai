@@ -181,6 +181,11 @@ export default function QuestionPaperView() {
                       )}
 
                       <div className={styles.qMeta}>
+                        {q.difficulty && (
+                          <span className={`${styles.diffBadge} ${styles[q.difficulty.toLowerCase() + 'Badge']}`}>
+                            {q.difficulty}
+                          </span>
+                        )}
                         <span className={styles.qMarks}>[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                       </div>
                     </div>
