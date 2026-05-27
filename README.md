@@ -18,18 +18,6 @@ Hey there! Want to see VedaAI in action? Check out our live deployments:
 
 ---
 
-## Screenshots
-
-<div align="center">
-  <img src="./frontend/public/creating.png" alt="Creating Assignment" width="800" style="border-radius:8px; margin-bottom:15px;"/>
-  <br/>
-  <img src="./frontend/public/created.png" alt="Generated Output" width="800" style="border-radius:8px; margin-bottom:15px;"/>
-  <br/>
-  <img src="./frontend/public/assignments.png" alt="Assignments Dashboard" width="800" style="border-radius:8px;"/>
-</div>
-
----
-
 ## Features & Bonus Implementations
 
 We didn't just build a simple assessment creator; we engineered a robust, production-ready platform that's built to scale. 
@@ -179,3 +167,22 @@ Visit [http://localhost:3000](http://localhost:3000) to see the magic.
 This submission represents a true production-grade approach to the VedaAI assignment. It goes miles beyond a simple CRUD app by integrating resilient background processing, real-time feedback loops, and strict data validation at every single layer. 
 
 Built with speed, stability, and massive scale in mind.
+
+---
+
+## Screenshots
+
+### 1. Creating Assignment Page
+<div align="center">
+  <img src="./frontend/public/creating.png" alt="Creating Assignment" width="800" style="border-radius:8px; margin-bottom:15px;"/>
+</div>
+
+### 2. Generated Output Page
+<div align="center">
+  <img src="./frontend/public/created.png" alt="Generated Output" width="800" style="border-radius:8px; margin-bottom:15px;"/>
+</div>
+
+### 3. Assignments Dashboard Page
+<div align="center">
+  <img src="./frontend/public/assignments.png" alt="Assignments Dashboard" width="800" style="border-radius:8px;"/>
+</div>
