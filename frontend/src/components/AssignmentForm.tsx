@@ -182,7 +182,7 @@ export default function AssignmentForm() {
       setCount,
       chapters: selectedChapters,
     });
-    if (id) router.push('/assignments');
+    if (id) router.push(`/assignment/${id}`);
   };
 
   return (

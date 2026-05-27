@@ -18,6 +18,18 @@ Hey there! Want to see VedaAI in action? Check out our live deployments:
 
 ---
 
+## Screenshots
+
+<div align="center">
+  <img src="./frontend/public/creating.png" alt="Creating Assignment" width="800" style="border-radius:8px; margin-bottom:15px;"/>
+  <br/>
+  <img src="./frontend/public/created.png" alt="Generated Output" width="800" style="border-radius:8px; margin-bottom:15px;"/>
+  <br/>
+  <img src="./frontend/public/assignments.png" alt="Assignments Dashboard" width="800" style="border-radius:8px;"/>
+</div>
+
+---
+
 ## Features & Bonus Implementations
 
 We didn't just build a simple assessment creator; we engineered a robust, production-ready platform that's built to scale. 
