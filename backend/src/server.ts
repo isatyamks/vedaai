@@ -11,7 +11,12 @@ import assignmentRoutes from './routes/assignmentRoutes';
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL ?? '*' }));
+const rawFrontendUrl = process.env.FRONTEND_URL?.trim();
+const frontendOrigin = rawFrontendUrl && rawFrontendUrl.endsWith('/')
+  ? rawFrontendUrl.slice(0, -1)
+  : (rawFrontendUrl ?? '*');
+
+app.use(cors({ origin: frontendOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
 app.use(async (_req, _res, next) => {
