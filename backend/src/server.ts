@@ -30,6 +30,13 @@ app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);
 app.use(rateLimiter);
 
+if (env.VERCEL) {
+  // Vercel: connect lazily on first request via connectDB() idempotency guard
+  app.use(async (_req, _res, next) => {
+    try { await connectDB(); next(); } catch (err) { next(err); }
+  });
+}
+
 app.use('/api/assignments', assignmentRoutes);
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime(), ts: new Date() }));
 app.use(errorHandler);
@@ -60,11 +67,5 @@ if (!env.VERCEL) {
   process.on('SIGINT', shutdown);
   process.on('uncaughtException', (err) => { console.error(err.message); process.exit(1); });
   start().catch((err) => { console.error(err.message); process.exit(1); });
-} else {
-  // Vercel: connect lazily on first request via connectDB() idempotency guard
-  app.use(async (_req, _res, next) => {
-    try { await connectDB(); next(); } catch (err) { next(err); }
-  });
 }
-
 export default app;
