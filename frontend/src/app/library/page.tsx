@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FolderOpen, Plus, Archive, FileText, CheckCircle } from 'lucide-react';
+import { Plus, Archive, FileText } from 'lucide-react';
 import styles from '../page.module.css';
 
 export default function LibraryPage() {

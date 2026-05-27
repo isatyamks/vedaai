@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Settings, Sliders, ShieldCheck, Mail, Database } from 'lucide-react';
+import { Sliders, ShieldCheck, Database } from 'lucide-react';
 import styles from '../page.module.css';
 
 export default function SettingsPage() {

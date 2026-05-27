@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, Plus, X, Calendar, AlertCircle, FileText, Mic, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Upload, Plus, X, Calendar } from 'lucide-react';
 import { useAssignmentStore, ISectionConfig } from '../store/assignmentStore';
 import styles from './AssignmentForm.module.css';
 

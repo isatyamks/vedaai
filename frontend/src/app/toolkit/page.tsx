@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BookOpen, Shield, GraduationCap, CheckCircle } from 'lucide-react';
+import { GraduationCap, CheckCircle } from 'lucide-react';
 import { useAssignmentStore } from '../../store/assignmentStore';
 import styles from '../page.module.css';
 
