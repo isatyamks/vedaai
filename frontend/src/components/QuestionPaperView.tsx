@@ -2,27 +2,15 @@
 
 import React, { useState } from 'react';
 import { Download, RotateCw, Printer } from 'lucide-react';
-import { useAssignmentStore, ISection, IQuestion } from '../store/assignmentStore';
+import { useAssignmentStore, ISection } from '../store/assignmentStore';
 import styles from './QuestionPaperView.module.css';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
 
-function computeTotals(sections: ISection[]) {
+function computeMarks(sections: ISection[]): number {
   let marks = 0;
-  let questions = 0;
-  sections.forEach((s) =>
-    s.questions.forEach((q) => {
-      marks += q.marks;
-      questions++;
-    })
-  );
-  return { marks, questions };
-}
-
-function difficultyClass(difficulty: IQuestion['difficulty'], styles: Record<string, string>): string {
-  if (difficulty === 'Easy') return styles.tagEasy;
-  if (difficulty === 'Moderate') return styles.tagModerate;
-  return styles.tagHard;
+  sections.forEach((s) => s.questions.forEach((q) => { marks += q.marks; }));
+  return marks;
 }
 
 export default function QuestionPaperView() {
@@ -31,14 +19,20 @@ export default function QuestionPaperView() {
   const [studentName, setStudentName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [classSec, setClassSec] = useState('');
+  const [selectedSet, setSelectedSet] = useState('A');
 
   if (!activeAssignment) return null;
 
-  const { marks: totalMarks } = computeTotals(activeAssignment.sections);
-  const hasMcqAnswers = activeAssignment.sections.some((s) => s.questions.some((q) => q.correctAnswer));
+  const sets = activeAssignment.sets || [];
+  const currentSet = sets.find((s) => s.setName === selectedSet) || {
+    setName: 'A',
+    sections: activeAssignment.sections,
+  };
+  const sectionsToRender = currentSet.sections || [];
+  const totalMarks = computeMarks(sectionsToRender);
 
   const handleDownload = () => {
-    window.open(`${BACKEND_URL}/api/assignments/${activeAssignment._id}/pdf`, '_blank');
+    window.open(`${BACKEND_URL}/api/assignments/${activeAssignment._id}/pdf?set=${selectedSet}`, '_blank');
   };
 
   const handleRegenerate = async () => {
@@ -50,38 +44,49 @@ export default function QuestionPaperView() {
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.aiBanner}>
-        <p className={styles.aiMessage}>
-          <strong>Here is your customised question paper</strong> for{' '}
-          <strong>{activeAssignment.subject}</strong>, {activeAssignment.grade}.
-          {activeAssignment.additionalInstructions
-            ? ` Instructions applied: "${activeAssignment.additionalInstructions.slice(0, 100)}…"`
-            : ' The paper is structured with sections and difficulty-tagged questions.'}
-        </p>
-        <button className={styles.downloadBtn} onClick={handleDownload} aria-label="Download as PDF">
-          <Download size={14} aria-hidden="true" />
-          Download PDF
-        </button>
-      </div>
-
       <div className={styles.actionsBar}>
-        <button
-          className={`${styles.actionBtn} ${styles.printBtn}`}
-          onClick={() => window.print()}
-          aria-label="Print exam paper"
-        >
-          <Printer size={14} aria-hidden="true" />
-          Print
-        </button>
-        <button
-          className={`${styles.actionBtn} ${styles.regenBtn}`}
-          onClick={handleRegenerate}
-          disabled={isLoading}
-          aria-label="Regenerate questions"
-        >
-          <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} aria-hidden="true" />
-          {isLoading ? 'Regenerating…' : 'Regenerate'}
-        </button>
+        {sets.length > 1 && (
+          <div className={styles.setSelectorWrap}>
+            <span className={styles.setLabel}>Exam Set:</span>
+            {sets.map((set) => (
+              <button
+                key={set.setName}
+                type="button"
+                className={`${styles.setTabBtn} ${selectedSet === set.setName ? styles.setTabBtnActive : ''}`}
+                onClick={() => setSelectedSet(set.setName)}
+              >
+                Set {set.setName}
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: '10px', marginLeft: 'auto' }}>
+          <button
+            className={`${styles.actionBtn} ${styles.printBtn}`}
+            onClick={handleDownload}
+            aria-label="Download current set as PDF"
+          >
+            <Download size={14} aria-hidden="true" />
+            Download PDF
+          </button>
+          <button
+            className={`${styles.actionBtn} ${styles.printBtn}`}
+            onClick={() => window.print()}
+            aria-label="Print exam paper"
+          >
+            <Printer size={14} aria-hidden="true" />
+            Print
+          </button>
+          <button
+            className={`${styles.actionBtn} ${styles.regenBtn}`}
+            onClick={handleRegenerate}
+            disabled={isLoading}
+            aria-label="Regenerate questions"
+          >
+            <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} aria-hidden="true" />
+            {isLoading ? 'Regenerating…' : 'Regenerate'}
+          </button>
+        </div>
       </div>
 
       <article className={styles.paper}>
@@ -91,6 +96,11 @@ export default function QuestionPaperView() {
           <div className={styles.schoolName}>Delhi Public School, Sector-4, Bokaro</div>
           <div className={styles.subjectLine}>
             Subject: {activeAssignment.subject}&nbsp;|&nbsp;Class: {activeAssignment.grade}
+            {sets.length > 1 && (
+              <span style={{ fontWeight: '800', marginLeft: '8px', color: 'var(--brand-orange)' }}>
+                &nbsp;|&nbsp;SET {selectedSet}
+              </span>
+            )}
           </div>
         </header>
 
@@ -145,7 +155,7 @@ export default function QuestionPaperView() {
 
         <hr className={styles.boldRule} />
 
-        {activeAssignment.sections.map((section, sIdx) => {
+        {sectionsToRender.map((section, sIdx) => {
           const label = String.fromCharCode(65 + sIdx);
           return (
             <section key={section._id ?? sIdx} className={styles.sectionBlock}>
@@ -171,9 +181,6 @@ export default function QuestionPaperView() {
                       )}
 
                       <div className={styles.qMeta}>
-                        <span className={`${styles.tag} ${difficultyClass(q.difficulty, styles)}`}>
-                          {q.difficulty}
-                        </span>
                         <span className={styles.qMarks}>[{q.marks} Mark{q.marks !== 1 ? 's' : ''}]</span>
                       </div>
                     </div>
@@ -186,29 +193,6 @@ export default function QuestionPaperView() {
 
         <div className={styles.endLine}>— End of Question Paper —</div>
 
-        {hasMcqAnswers && (
-          <div className={styles.answerKey}>
-            <div className={styles.answerKeyTitle}>Answer Key</div>
-            <div className={styles.answerList}>
-              {(() => {
-                let num = 0;
-                return activeAssignment.sections.flatMap((s) =>
-                  s.questions
-                    .filter((q) => q.correctAnswer)
-                    .map((q) => {
-                      num++;
-                      return (
-                        <div key={num} className={styles.answerItem}>
-                          <span className={styles.answerNum}>{num}.</span>
-                          <span>{q.correctAnswer}</span>
-                        </div>
-                      );
-                    })
-                );
-              })()}
-            </div>
-          </div>
-        )}
       </article>
     </div>
   );
