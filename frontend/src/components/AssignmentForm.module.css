@@ -173,6 +173,23 @@
   width: 100%;
 }
 
+.textInput {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--primary);
+  background: #fff;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
 .dateInput {
   width: 100%;
   padding: 11px 40px 11px 14px;

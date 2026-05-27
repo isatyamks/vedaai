@@ -41,6 +41,7 @@ export default function AssignmentForm() {
   const router = useRouter();
   const { createAssignment, isLoading, showToast, errorMessage } = useAssignmentStore();
 
+  const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [grade, setGrade] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -119,8 +120,9 @@ export default function AssignmentForm() {
   const totalQuestions = rows.reduce((sum, r) => sum + r.count, 0);
   const totalMarks = rows.reduce((sum, r) => sum + r.count * r.marks, 0);
 
-  const isBlueprintReady = !!subject && !!grade && !!dueDate && rows.length > 0;
+  const isBlueprintReady = !!title && !!subject && !!grade && !!dueDate && rows.length > 0;
   const missingFields: string[] = [];
+  if (!title) missingFields.push('Title');
   if (!subject) missingFields.push('Subject');
   if (!grade) missingFields.push('Class');
   if (!dueDate) missingFields.push('Due Date');
@@ -167,6 +169,7 @@ export default function AssignmentForm() {
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = 'Please enter an assignment title.';
     if (!subject) errs.subject = 'Please select a subject.';
     if (!grade) errs.grade = 'Please select a class.';
     if (!dueDate) errs.dueDate = 'Due date is required.';
@@ -193,7 +196,7 @@ export default function AssignmentForm() {
     }));
 
     const id = await createAssignment({
-      title: `${subject} Test — ${grade}`,
+      title: title.trim(),
       subject,
       grade,
       dueDate,
@@ -210,6 +213,19 @@ export default function AssignmentForm() {
       <form id="assignment-create-form" className={styles.formContainer} onSubmit={handleSubmit} noValidate>
         <div className={styles.formCard}>
           <h3 className={styles.cardSectionTitle}>1. General Details</h3>
+
+          <div className={styles.fieldGroup} style={{ marginBottom: '20px' }}>
+            <label htmlFor="assignment-title" className={styles.fieldLabel}>Assignment Title</label>
+            <input
+              id="assignment-title"
+              type="text"
+              className={styles.textInput}
+              placeholder="e.g. Mid-Term Physics Assessment"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            {errors.title && <span className={styles.errorMsg} role="alert">{errors.title}</span>}
+          </div>
 
           {!uploadedFile && !isUploading && (
             <label className={styles.uploadZone} htmlFor="file-upload">
