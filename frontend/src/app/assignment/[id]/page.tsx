@@ -4,16 +4,14 @@ import React, { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAssignmentStore } from '../../../store/assignmentStore';
 import QuestionPaperView from '../../../components/QuestionPaperView';
-import styles from '../../assignments/page.module.css';
+import styles from './page.module.css';
 
 export default function AssignmentDetailPage() {
   const { id } = useParams() as { id: string };
   const { activeAssignment, fetchAssignmentDetails, isLoading } = useAssignmentStore();
 
   useEffect(() => {
-    if (id) {
-      fetchAssignmentDetails(id);
-    }
+    if (id) fetchAssignmentDetails(id);
   }, [id, fetchAssignmentDetails]);
 
   if (isLoading && !activeAssignment) {

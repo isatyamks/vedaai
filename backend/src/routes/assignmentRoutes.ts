@@ -29,13 +29,13 @@ const CreateSchema = z.object({
   chapters: z.array(z.string()).optional().default([]),
 });
 
-async function enqueue(id: string, configs: any[]): Promise<void> {
+async function enqueue(id: string, configs: any[], prompt?: string): Promise<void> {
   if (process.env.VERCEL) {
-    await processGenerationJob(id, configs);
+    await processGenerationJob(id, configs, prompt);
   } else if (redisAvailable && assessmentQueue) {
-    await assessmentQueue.add('generate-questions', { assignmentId: id, sectionConfigs: configs });
+    await assessmentQueue.add('generate-questions', { assignmentId: id, sectionConfigs: configs, prompt });
   } else {
-    setImmediate(() => processGenerationJob(id, configs));
+    setImmediate(() => processGenerationJob(id, configs, prompt));
   }
 }
 
@@ -80,6 +80,87 @@ router.get('/syllabus/chapters', wrap(async (req, res) => {
   const chapters = doc?.chapterList ?? [];
   await cacheSet(key, chapters, 3600);
   return res.json({ chapters });
+}));
+
+router.post('/seed', wrap(async (_req, res) => {
+  const seedConfigs = [
+    {
+      title: 'Mathematics Assessment — Grade 8',
+      subject: 'Mathematics',
+      grade: 'Grade 8',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      additionalInstructions: 'Answer all questions clearly. Show your working where appropriate.',
+      setCount: 1,
+      chapters: [],
+      sections: [
+        { title: 'Section A: Multiple Choice Questions', type: 'MCQ' as const, count: 4, marksPerQuestion: 1, difficulty: 'Moderate' as const },
+        { title: 'Section B: Short Questions', type: 'Short' as const, count: 4, marksPerQuestion: 4, difficulty: 'Moderate' as const }
+      ]
+    },
+    {
+      title: 'Physics & Chemistry Assessment — Grade 10',
+      subject: 'Science',
+      grade: 'Grade 10',
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+      additionalInstructions: 'Scientific calculators are allowed. Show all equations and calculations.',
+      setCount: 1,
+      chapters: [],
+      sections: [
+        { title: 'Section A: Multiple Choice Questions', type: 'MCQ' as const, count: 5, marksPerQuestion: 1, difficulty: 'Easy' as const },
+        { title: 'Section B: Short Answer Questions', type: 'Short' as const, count: 3, marksPerQuestion: 3, difficulty: 'Moderate' as const },
+        { title: 'Section C: Long Answer Questions', type: 'Long' as const, count: 2, marksPerQuestion: 5, difficulty: 'Hard' as const }
+      ]
+    },
+    {
+      title: 'English Grammar and Comprehension — Grade 6',
+      subject: 'English',
+      grade: 'Grade 6',
+      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      additionalInstructions: 'Read the passages carefully. Write in complete sentences.',
+      setCount: 1,
+      chapters: [],
+      sections: [
+        { title: 'Section A: Multiple Choice Questions', type: 'MCQ' as const, count: 6, marksPerQuestion: 1, difficulty: 'Easy' as const },
+        { title: 'Section B: Short Questions', type: 'Short' as const, count: 4, marksPerQuestion: 3, difficulty: 'Moderate' as const }
+      ]
+    },
+    {
+      title: 'World War I History Assessment — Grade 9',
+      subject: 'History',
+      grade: 'Grade 9',
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      additionalInstructions: 'Provide historical evidence and references where applicable.',
+      setCount: 1,
+      chapters: [],
+      sections: [
+        { title: 'Section A: Multiple Choice Questions', type: 'MCQ' as const, count: 5, marksPerQuestion: 1, difficulty: 'Moderate' as const },
+        { title: 'Section B: Short Answer Questions', type: 'Short' as const, count: 3, marksPerQuestion: 4, difficulty: 'Moderate' as const },
+        { title: 'Section C: Essay Question', type: 'Long' as const, count: 1, marksPerQuestion: 8, difficulty: 'Hard' as const }
+      ]
+    }
+  ];
+
+  const created = [];
+  for (const item of seedConfigs) {
+    const assignment = await Assignment.create({
+      title: item.title,
+      subject: item.subject,
+      grade: item.grade,
+      dueDate: item.dueDate,
+      additionalInstructions: item.additionalInstructions,
+      status: 'queued',
+      progress: 0,
+      sections: [],
+      sets: [],
+      setCount: item.setCount,
+      chapters: item.chapters
+    });
+    await enqueue(assignment._id.toString(), item.sections);
+    created.push(assignment);
+  }
+
+  await cacheDelete(CK.list);
+  return res.status(201).json({ message: 'Seeding initiated. Assessments are being generated in the background.', created });
 }));
 
 router.get('/', wrap(async (_req, res) => {
@@ -142,6 +223,40 @@ router.post('/:id/regenerate', wrap(async (req, res) => {
   await cacheDelete(CK.detail(req.params.id));
   await cacheDelete(CK.list);
   await enqueue(req.params.id, configs);
+  return res.json(assignment);
+}));
+
+router.post('/:id/edit', wrap(async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'Prompt is required for AI editing.' });
+  
+  const assignment = await Assignment.findById(req.params.id);
+  if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
+
+  const configs = assignment.sections.map((sec) => {
+    const q = sec.questions[0];
+    return {
+      title: sec.title,
+      type: q?.options?.length ? 'MCQ' : (q?.marks ?? 0) > 6 ? 'Long' : 'Short',
+      count: sec.questions.length,
+      marksPerQuestion: q?.marks ?? 5,
+      difficulty: q?.difficulty ?? 'Moderate',
+    };
+  });
+
+  if (!configs.length) return res.status(400).json({ error: 'No section configs available.' });
+
+  assignment.status = 'queued';
+  assignment.progress = 0;
+  assignment.sections = [];
+  assignment.sets = [];
+  assignment.errorMessage = undefined;
+  await assignment.save();
+
+  await cacheDelete(CK.detail(req.params.id));
+  await cacheDelete(CK.list);
+
+  await enqueue(req.params.id, configs, prompt);
   return res.json(assignment);
 }));
 

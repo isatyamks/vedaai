@@ -1,0 +1,52 @@
+.pageWrapper {
+  min-height: 100vh;
+}
+
+.content {
+  max-width: 1200px;
+}
+
+.loaderContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 40vh;
+}
+
+.pulsingSpinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-orange);
+  animation: spin 0.8s linear infinite;
+}
+
+.loaderText {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  text-align: center;
+  gap: 12px;
+}
+
+.emptyTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.emptyDesc {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 400px;
+}

@@ -18,7 +18,8 @@ async function updateProgress(
 
 export async function processGenerationJob(
   assignmentId: string,
-  sectionConfigs: ISectionConfig[]
+  sectionConfigs: ISectionConfig[],
+  prompt?: string
 ): Promise<void> {
   try {
     await updateProgress(assignmentId, 'processing', 15, 'Preparing your test paper...');
@@ -30,6 +31,7 @@ export async function processGenerationJob(
 
     const count = assignment.setCount || 1;
     const sets = [];
+    const existingSets = assignment.sets ?? [];
 
     for (let setIdx = 0; setIdx < count; setIdx++) {
       const setName = String.fromCharCode(65 + setIdx);
@@ -49,7 +51,9 @@ export async function processGenerationJob(
         assignment.additionalInstructions ?? '',
         sectionConfigs,
         setName,
-        assignment.chapters ?? []
+        assignment.chapters ?? [],
+        prompt,
+        existingSets
       );
 
       sets.push({ setName, sections });
@@ -77,8 +81,8 @@ export function initWorker(): void {
   const worker = new Worker(
     'assessment-generation',
     async (job: Job) => {
-      const { assignmentId, sectionConfigs } = job.data;
-      await processGenerationJob(assignmentId, sectionConfigs);
+      const { assignmentId, sectionConfigs, prompt } = job.data;
+      await processGenerationJob(assignmentId, sectionConfigs, prompt);
     },
     { connection: redisConnection as any }
   );

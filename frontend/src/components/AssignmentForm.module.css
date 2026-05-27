@@ -76,7 +76,7 @@
 }
 
 .uploadZone:hover {
-  background-color: #fff8f6;
+  background-color: var(--brand-glow);
   border-color: var(--brand-orange);
 }
 

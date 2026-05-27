@@ -9,8 +9,16 @@
 
 .actionsBar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
+}
+
+.actionsRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 .actionBtn {
@@ -25,19 +33,97 @@
   transition: all var(--transition-fast);
 }
 
-.regenBtn {
-  background: #fff0eb;
+.editBtn {
+  background: var(--brand-glow);
   color: var(--brand-orange);
-  border: 1px solid #ffd5c2;
+  border: 1px solid var(--brand-orange);
 }
 
-.regenBtn:hover:not(:disabled) {
-  background: #ffd5c2;
+.editBtn:hover:not(:disabled),
+.editBtnActive {
+  background: var(--brand-orange);
+  color: white !important;
 }
 
-.regenBtn:disabled {
+.editBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.promptPanel {
+  margin-top: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.promptInputContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.promptSparkle {
+  color: var(--brand-orange);
+  flex-shrink: 0;
+}
+
+.promptInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13.5px;
+  outline: none;
+  padding: 6px 0;
+}
+
+.promptInput::placeholder {
+  color: var(--muted);
+}
+
+.promptSubmitBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--brand-orange);
+  color: white;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.promptSubmitBtn:hover:not(:disabled) {
+  background: var(--brand-orange-hover);
+  transform: translateY(-1px);
+}
+
+.promptSubmitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promptCancelBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--secondary);
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+
+.promptCancelBtn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--primary);
 }
 
 .printBtn {

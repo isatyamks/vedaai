@@ -1,30 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, RotateCw, Printer } from 'lucide-react';
+import { Download, Printer, Edit, Send, X } from 'lucide-react';
 import { useAssignmentStore, ISection } from '../store/assignmentStore';
 import styles from './QuestionPaperView.module.css';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
 
 function computeMarks(sections: ISection[]): number {
-  let marks = 0;
-  sections.forEach((s) => s.questions.forEach((q) => { marks += q.marks; }));
-  return marks;
+  return sections.reduce((sum, s) => sum + s.questions.reduce((qs, q) => qs + q.marks, 0), 0);
 }
 
 export default function QuestionPaperView() {
-  const { activeAssignment, regenerateAssignment, isLoading } = useAssignmentStore();
+  const { activeAssignment, editAssignment, isLoading } = useAssignmentStore();
 
   const [studentName, setStudentName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [classSec, setClassSec] = useState('');
   const [selectedSet, setSelectedSet] = useState('A');
+  const [showPromptInput, setShowPromptInput] = useState(false);
+  const [promptText, setPromptText] = useState('');
 
   if (!activeAssignment) return null;
 
   const sets = activeAssignment.sets || [];
-  const currentSet = sets.find((s) => s.setName === selectedSet) || {
+  const currentSet = sets.find((s) => s.setName === selectedSet) ?? {
     setName: 'A',
     sections: activeAssignment.sections,
   };
@@ -35,9 +35,12 @@ export default function QuestionPaperView() {
     window.open(`${BACKEND_URL}/api/assignments/${activeAssignment._id}/pdf?set=${selectedSet}`, '_blank');
   };
 
-  const handleRegenerate = async () => {
-    if (!confirm('Regenerate all questions? Existing questions will be replaced.')) return;
-    await regenerateAssignment(activeAssignment._id);
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promptText.trim()) return;
+    await editAssignment(activeAssignment._id, promptText.trim());
+    setPromptText('');
+    setShowPromptInput(false);
   };
 
   let globalQNum = 0;
@@ -60,7 +63,7 @@ export default function QuestionPaperView() {
             ))}
           </div>
         )}
-        <div style={{ display: 'flex', gap: '10px', marginLeft: 'auto' }}>
+        <div className={styles.actionsRight}>
           <button
             className={`${styles.actionBtn} ${styles.printBtn}`}
             onClick={handleDownload}
@@ -78,16 +81,45 @@ export default function QuestionPaperView() {
             Print
           </button>
           <button
-            className={`${styles.actionBtn} ${styles.regenBtn}`}
-            onClick={handleRegenerate}
+            className={`${styles.actionBtn} ${styles.editBtn} ${showPromptInput ? styles.editBtnActive : ''}`}
+            onClick={() => setShowPromptInput(!showPromptInput)}
             disabled={isLoading}
-            aria-label="Regenerate questions"
+            aria-label="Edit with AI"
           >
-            <RotateCw size={14} className={isLoading ? 'animate-spin' : ''} aria-hidden="true" />
-            {isLoading ? 'Regenerating…' : 'Regenerate'}
+            <Edit size={14} aria-hidden="true" />
+            {isLoading ? 'AI Editing…' : 'AI Edit'}
           </button>
         </div>
       </div>
+
+      {showPromptInput && (
+        <form onSubmit={handleEditSubmit} className={`${styles.promptPanel} animate-slide-up`}>
+          <div className={styles.promptInputContainer}>
+            <Edit size={16} className={styles.promptSparkle} />
+            <input
+              type="text"
+              className={styles.promptInput}
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder="e.g. Make B section MCQ questions more difficult..."
+              autoFocus
+              disabled={isLoading}
+            />
+            <button type="submit" className={styles.promptSubmitBtn} disabled={isLoading || !promptText.trim()}>
+              <Send size={14} />
+              <span>Submit</span>
+            </button>
+            <button
+              type="button"
+              className={styles.promptCancelBtn}
+              onClick={() => setShowPromptInput(false)}
+              disabled={isLoading}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </form>
+      )}
 
       <article className={styles.paper}>
         <div className={styles.watermark} aria-hidden="true">VEDA AI</div>
@@ -197,7 +229,6 @@ export default function QuestionPaperView() {
         })}
 
         <div className={styles.endLine}>— End of Question Paper —</div>
-
       </article>
     </div>
   );

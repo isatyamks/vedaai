@@ -7,7 +7,7 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(5000),
   MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
-  GEMINI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().min(1, 'GROQ_API_KEY is required'),
   REDIS_URL: z.string().default('redis://127.0.0.1:6379'),
   FRONTEND_URL: z.string().default('*'),
   VERCEL: z.string().optional(),

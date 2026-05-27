@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, Loader, AlertTriangle } from 'lucide-react';
 import { useAssignmentStore, IActiveJob } from '../store/assignmentStore';
 import styles from './ProgressModal.module.css';
@@ -42,12 +43,22 @@ function ProgressRing({ progress }: { progress: number }) {
 }
 
 export default function ProgressModal() {
+  const router = useRouter();
   const { activeJob, clearActiveJob } = useAssignmentStore();
 
   if (!activeJob) return null;
 
-  const { progress, status, message } = activeJob;
+  const { progress, status, message, assignmentId } = activeJob;
   const isTerminal = status === 'completed' || status === 'failed';
+
+  const handleView = () => {
+    clearActiveJob();
+    router.push(`/assignment/${assignmentId}`);
+  };
+
+  const handleClose = () => {
+    clearActiveJob();
+  };
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Assignment creation progress">
@@ -77,9 +88,9 @@ export default function ProgressModal() {
 
         <div className={styles.stepsList} aria-label="Progress steps">
           {STEPS.map((step, i) => {
-            const isDone = progress > step.threshold;
-            const nextThreshold = STEPS[i + 1]?.threshold ?? 95;
-            const isActive = progress >= step.threshold && progress < nextThreshold && !isDone;
+            const nextThreshold = STEPS[i + 1]?.threshold ?? 101;
+            const isDone = progress >= nextThreshold;
+            const isActive = progress >= step.threshold && progress < nextThreshold;
             return (
               <div key={step.label} className={styles.stepRow}>
                 <div className={styles.stepIconWrap}>
@@ -92,7 +103,10 @@ export default function ProgressModal() {
         </div>
 
         {isTerminal && (
-          <button className={styles.okButton} onClick={clearActiveJob}>
+          <button
+            className={styles.okButton}
+            onClick={status === 'completed' ? handleView : handleClose}
+          >
             {status === 'failed' ? 'Close & Retry' : 'View Exam Paper'}
           </button>
         )}

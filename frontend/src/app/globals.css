@@ -48,7 +48,6 @@
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   --sidebar-width: 245px;
-  --header-height: 56px;
 }
 
 :root.dark {
@@ -155,17 +154,10 @@ a {
 }
 
 .shell {
-  display: flex;
-  flex-direction: column;
   margin-left: calc(var(--sidebar-width) + 32px);
   min-height: 100vh;
+  padding: 84px 16px 48px;
   transition: margin-left var(--transition-normal);
-}
-
-.shell__content {
-  padding-top: calc(var(--header-height) + 32px);
-  padding-right: 16px;
-  flex: 1;
 }
 
 @keyframes fadeIn {
@@ -201,11 +193,8 @@ a {
 @media (max-width: 768px) {
   .shell {
     margin-left: 0;
-  }
-
-  .shell__content {
-    padding-top: 60px;
-    padding-bottom: 60px;
+    padding-top: 68px;
+    padding-bottom: 72px;
   }
 }
 
@@ -234,11 +223,7 @@ a {
     width: 100% !important;
   }
 
-  .shell__content {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-  }
+
 
   [class*="paper"] {
     border: none !important;

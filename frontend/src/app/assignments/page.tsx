@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Clock, FilePlus2, Search, Filter, ArrowDownUp } from 'lucide-react';
+import { Clock, FilePlus2, Plus } from 'lucide-react';
 import { useAssignmentStore, IAssignment } from '../../store/assignmentStore';
 import styles from './page.module.css';
 
@@ -10,10 +10,7 @@ function computeTotals(assignment: IAssignment) {
   let questions = 0;
   let marks = 0;
   assignment.sections.forEach((s) =>
-    s.questions.forEach((q) => {
-      questions++;
-      marks += q.marks;
-    })
+    s.questions.forEach((q) => { questions++; marks += q.marks; })
   );
   return { questions, marks };
 }
@@ -32,35 +29,21 @@ function timeAgo(dateString: string) {
 
 function SkeletonGrid() {
   return (
-    <div className={styles.skeletonGrid}>
+    <div className={styles.cardsGrid}>
       {[1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className={styles.skeletonCard}>
           <div className={styles.cardHeader}>
             <div className={`${styles.shimmer} ${styles.skBadge}`} />
             <div className={`${styles.shimmer} ${styles.skDot}`} />
           </div>
-          <div className={`${styles.shimmer} ${styles.skLine} ${styles.medium}`} style={{ marginTop: '4px' }} />
-          <div className={`${styles.shimmer} ${styles.skLine} ${styles.short}`} style={{ marginTop: 'auto' }} />
+          <div className={`${styles.shimmer} ${styles.skLine} ${styles.medium}`} />
+          <div className={`${styles.shimmer} ${styles.skLine} ${styles.short}`} />
           <div className={styles.cardFooter}>
             <div className={`${styles.shimmer} ${styles.skLine}`} style={{ width: '30%' }} />
             <div className={`${styles.shimmer} ${styles.skLine}`} style={{ width: '25%' }} />
           </div>
         </div>
       ))}
-    </div>
-  );
-}
-
-function SkeletonDashboard() {
-  return (
-    <div className="animate-fade">
-      <div className={styles.dashboardHeader}>
-        <button disabled className={styles.createBtn} style={{ opacity: 0.5 }}>
-          <Plus size={16} />
-          <span>Create Assignment</span>
-        </button>
-      </div>
-      <SkeletonGrid />
     </div>
   );
 }
@@ -83,24 +66,16 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
   );
 }
 
-function AssignmentCard({
-  assignment,
-  onClick,
-}: {
-  assignment: IAssignment;
-  onClick: () => void;
-}) {
+function AssignmentCard({ assignment, onClick }: { assignment: IAssignment; onClick: () => void }) {
   const { questions, marks } = computeTotals(assignment);
 
   const statusLabel =
-    assignment.status === 'completed' ? 'Ready' : assignment.status === 'failed' ? 'Error' : 'Generating';
+    assignment.status === 'completed' ? 'Ready' :
+    assignment.status === 'failed' ? 'Error' : 'Generating';
 
   const dotClass =
-    assignment.status === 'completed'
-      ? styles.dotCompleted
-      : assignment.status === 'failed'
-      ? styles.dotFailed
-      : styles.dotQueued;
+    assignment.status === 'completed' ? styles.dotCompleted :
+    assignment.status === 'failed' ? styles.dotFailed : styles.dotQueued;
 
   return (
     <div
@@ -144,101 +119,6 @@ function AssignmentCard({
   );
 }
 
-function Dashboard({
-  assignments,
-  onCreateClick,
-  onSelectAssignment,
-}: {
-  assignments: IAssignment[];
-  onCreateClick: () => void;
-  onSelectAssignment: (a: IAssignment) => void;
-}) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [isFiltering, setIsFiltering] = useState(false);
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
-
-  useEffect(() => {
-    setIsFiltering(true);
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-      setIsFiltering(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery, sortBy]);
-
-  const filteredAssignments = useMemo(() => {
-    let result = [...assignments];
-    if (debouncedQuery) {
-      const lowerQ = debouncedQuery.toLowerCase();
-      result = result.filter(
-        a => a.title.toLowerCase().includes(lowerQ) || a.subject.toLowerCase().includes(lowerQ)
-      );
-    }
-    if (sortBy === 'newest') {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (sortBy === 'oldest') {
-      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    } else if (sortBy === 'name') {
-      result.sort((a, b) => a.title.localeCompare(b.title));
-    }
-    return result;
-  }, [assignments, debouncedQuery, sortBy]);
-
-  return (
-    <div className="animate-fade">
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
-          <button className={styles.toolbarBtn} onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : 'newest')}>
-            <Filter size={16} />
-            <span>Filter By</span>
-          </button>
-          
-          <div className={styles.searchWrap}>
-            <Search size={16} className={styles.searchIcon} />
-            <input 
-              type="text" 
-              placeholder="Search Assignment" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-            />
-          </div>
-        </div>
-        
-        <button id="dashboard-create-btn" className={styles.createBtn} onClick={onCreateClick}>
-          <Plus size={16} />
-          <span>Create Assignment</span>
-        </button>
-      </div>
-
-      {isFiltering ? (
-        <SkeletonGrid />
-      ) : filteredAssignments.length === 0 ? (
-        <div className={styles.emptyStateContainer}>
-          <div className={styles.emptyIconWrap}>
-            <FilePlus2 size={28} />
-          </div>
-          <h2 className={styles.emptyTitle}>No assignments found</h2>
-          <p className={styles.emptyDesc}>
-            Try adjusting your search query or filters.
-          </p>
-        </div>
-      ) : (
-        <div className={styles.cardsGrid}>
-          {filteredAssignments.map((assignment) => (
-            <AssignmentCard
-              key={assignment._id}
-              assignment={assignment}
-              onClick={() => onSelectAssignment(assignment)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Page() {
   const router = useRouter();
   const {
@@ -246,50 +126,60 @@ export default function Page() {
     isLoading,
     fetchAssignments,
     selectAssignment,
+    searchQuery,
+    sortBy,
   } = useAssignmentStore();
 
   useEffect(() => {
     fetchAssignments();
   }, [fetchAssignments]);
 
-  const handleSelectAssignment = (assignment: IAssignment) => {
+  const filtered = useMemo(() => {
+    let result = [...assignments];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (a) => a.title.toLowerCase().includes(q) || a.subject.toLowerCase().includes(q)
+      );
+    }
+    if (sortBy === 'newest') {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === 'oldest') {
+      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else {
+      result.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return result;
+  }, [assignments, searchQuery, sortBy]);
+
+  const handleSelect = (assignment: IAssignment) => {
     selectAssignment(assignment);
     router.push(`/assignment/${assignment._id}`);
   };
 
-  const handleCreateClick = () => {
-    router.push('/create');
-  };
-
   if (isLoading && assignments.length === 0) {
-    return (
-      <div className={styles.pageWrapper}>
-        <div className={styles.content}>
-          <SkeletonDashboard />
-        </div>
-      </div>
-    );
+    return <SkeletonGrid />;
   }
 
   if (assignments.length === 0) {
+    return <EmptyState onCreateClick={() => router.push('/create')} />;
+  }
+
+  if (filtered.length === 0) {
     return (
-      <div className={styles.pageWrapper}>
-        <div className={styles.content}>
-          <EmptyState onCreateClick={handleCreateClick} />
-        </div>
+      <div className={styles.emptyStateContainer}>
+        <div className={styles.emptyIconWrap}><FilePlus2 size={28} /></div>
+        <h2 className={styles.emptyTitle}>No results</h2>
+        <p className={styles.emptyDesc}>No assignments match your search.</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.pageWrapper}>
-      <div className={styles.content}>
-        <Dashboard
-          assignments={assignments}
-          onCreateClick={handleCreateClick}
-          onSelectAssignment={handleSelectAssignment}
-        />
-      </div>
+    <div className={`${styles.cardsGrid} animate-fade`}>
+      {filtered.map((a) => (
+        <AssignmentCard key={a._id} assignment={a} onClick={() => handleSelect(a)} />
+      ))}
     </div>
   );
 }

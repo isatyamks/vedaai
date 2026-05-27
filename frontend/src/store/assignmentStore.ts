@@ -66,24 +66,27 @@ interface AssignmentStore {
   activeAssignment: IAssignment | null;
   isLoading: boolean;
   activeJob: IActiveJob | null;
-  showCreationForm: boolean;
   errorMessage: string | null;
+  searchQuery: string;
+  sortBy: 'newest' | 'oldest' | 'name';
+  setSearchQuery: (q: string) => void;
+  setSortBy: (s: 'newest' | 'oldest' | 'name') => void;
   toast: { message: string; type: 'success' | 'info' | 'error' } | null;
   showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
   hideToast: () => void;
-
   fetchAssignments: () => Promise<void>;
   fetchAssignmentDetails: (id: string) => Promise<IAssignment | null>;
   createAssignment: (payload: CreateAssignmentPayload) => Promise<string | null>;
   regenerateAssignment: (id: string, customSections?: ISectionConfig[]) => Promise<void>;
+  editAssignment: (id: string, userPrompt: string) => Promise<void>;
   selectAssignment: (assignment: IAssignment | null) => void;
-  setCreationForm: (show: boolean) => void;
   clearActiveJob: () => void;
   setupSocketListener: (assignmentId: string) => void;
 }
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
 let socket: Socket | null = null;
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 function disconnectSocket(): void {
   if (socket) {
@@ -97,18 +100,23 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   activeAssignment: null,
   isLoading: false,
   activeJob: null,
-  showCreationForm: false,
   errorMessage: null,
+  searchQuery: '',
+  sortBy: 'newest',
+  setSearchQuery: (q) => set({ searchQuery: q }),
+  setSortBy: (s) => set({ sortBy: s }),
   toast: null,
+
   showToast: (message, type = 'info') => {
+    if (toastTimer) clearTimeout(toastTimer);
     set({ toast: { message, type } });
-    const existingTimeout = (globalThis as any).__toastTimeout;
-    if (existingTimeout) clearTimeout(existingTimeout);
-    (globalThis as any).__toastTimeout = setTimeout(() => {
-      set({ toast: null });
-    }, 3000);
+    toastTimer = setTimeout(() => set({ toast: null }), 3000);
   },
-  hideToast: () => set({ toast: null }),
+
+  hideToast: () => {
+    if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+    set({ toast: null });
+  },
 
   fetchAssignments: async () => {
     set({ isLoading: true, errorMessage: null });
@@ -125,13 +133,7 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   },
 
   fetchAssignmentDetails: async (id) => {
-    const existing = get().assignments.find((a) => a._id === id);
-    if (existing && existing.sections && existing.sections.length > 0) {
-      set({ activeAssignment: existing, isLoading: true });
-    } else {
-      set({ isLoading: true });
-    }
-    set({ errorMessage: null });
+    set({ isLoading: true, errorMessage: null });
     try {
       const res = await fetch(`${API}/api/assignments/${id}`);
       if (!res.ok) throw new Error('Failed to fetch assignment details.');
@@ -168,9 +170,10 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
           assignmentId: assignment._id,
           status: assignment.status,
           progress: assignment.progress,
-          message: assignment.status === 'completed' ? 'Test paper created successfully!' : 'Assignment queued for generation...',
+          message: assignment.status === 'completed'
+            ? 'Test paper created successfully!'
+            : 'Assignment queued for generation...',
         },
-        showCreationForm: false,
       }));
 
       get().setupSocketListener(assignment._id);
@@ -208,7 +211,9 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
           assignmentId: id,
           status: updated.status,
           progress: updated.progress,
-          message: updated.status === 'completed' ? 'Regeneration completed successfully!' : 'Regeneration queued...',
+          message: updated.status === 'completed'
+            ? 'Regeneration completed successfully!'
+            : 'Regeneration queued...',
         },
       }));
 
@@ -222,12 +227,47 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
     }
   },
 
-  selectAssignment: (assignment) => {
-    set({ activeAssignment: assignment, showCreationForm: false, errorMessage: null });
+  editAssignment: async (id, userPrompt) => {
+    set({ isLoading: true, errorMessage: null });
+    try {
+      const res = await fetch(`${API}/api/assignments/${id}/edit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error ?? 'Failed to trigger AI edit.');
+      }
+
+      const updated: IAssignment = await res.json();
+
+      set((state) => ({
+        activeAssignment: updated,
+        assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
+        activeJob: {
+          assignmentId: id,
+          status: updated.status,
+          progress: updated.progress,
+          message: updated.status === 'completed'
+            ? 'AI Edit completed successfully!'
+            : 'AI Edit queued...',
+        },
+      }));
+
+      get().setupSocketListener(id);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error during AI edit.';
+      set({ errorMessage: msg });
+      get().showToast(msg, 'error');
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
-  setCreationForm: (show) => {
-    set({ showCreationForm: show, activeAssignment: null, errorMessage: null });
+  selectAssignment: (assignment) => {
+    set({ activeAssignment: assignment, errorMessage: null });
   },
 
   clearActiveJob: () => {
@@ -250,6 +290,7 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set({ activeJob: data });
 
       if (data.status === 'completed' || data.status === 'failed') {
+        disconnectSocket();
         get().fetchAssignments();
         get().fetchAssignmentDetails(assignmentId);
       }

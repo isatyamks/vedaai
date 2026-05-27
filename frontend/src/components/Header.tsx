@@ -1,10 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, HelpCircle, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Bell, ChevronDown, Sun, Moon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAssignmentStore } from '../store/assignmentStore';
 import styles from './Header.module.css';
+
+const BREADCRUMBS: Record<string, string> = {
+  '/assignments': 'Assignments',
+  '/create': 'Create Assignment',
+  '/groups': 'My Classes',
+  '/toolkit': 'Teacher Tools',
+  '/library': 'My Library',
+  '/settings': 'Settings',
+  '/home': 'Home',
+  '/analytics': 'Analytics',
+};
 
 export default function Header() {
   const pathname = usePathname();
@@ -15,8 +26,8 @@ export default function Header() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    setTheme(initialTheme as 'light' | 'dark');
+    const initialTheme = (savedTheme as 'light' | 'dark') || (prefersDark ? 'dark' : 'light');
+    setTheme(initialTheme);
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
@@ -27,30 +38,11 @@ export default function Header() {
     document.documentElement.classList.toggle('dark', nextTheme === 'dark');
   };
 
-  const handleBack = () => {
-    if (pathname !== '/') {
-      router.push('/');
-    }
-  };
+  const showBackBtn = pathname !== '/assignments';
 
-  let breadcrumb = 'Assignments';
-  if (pathname === '/') {
-    breadcrumb = 'Assignments';
-  } else if (pathname === '/create') {
-    breadcrumb = 'Create Assignment';
-  } else if (pathname.startsWith('/assignment/') && activeAssignment) {
-    breadcrumb = activeAssignment.title;
-  } else if (pathname === '/groups') {
-    breadcrumb = 'My Classes';
-  } else if (pathname === '/toolkit') {
-    breadcrumb = "Teacher Tools";
-  } else if (pathname === '/library') {
-    breadcrumb = 'My Library';
-  } else if (pathname === '/settings') {
-    breadcrumb = 'Settings';
-  }
-
-  const showBackBtn = pathname !== '/';
+  const breadcrumb = pathname.startsWith('/assignment/') && activeAssignment
+    ? activeAssignment.title
+    : BREADCRUMBS[pathname] ?? 'Assignments';
 
   return (
     <header className={styles.header}>
@@ -59,9 +51,9 @@ export default function Header() {
           <div className={styles.topLoaderBar} />
         </div>
       )}
-      <button 
-        className={styles.breadcrumb} 
-        onClick={handleBack} 
+      <button
+        className={styles.breadcrumb}
+        onClick={() => router.push('/assignments')}
         disabled={!showBackBtn}
         aria-label="Navigate back"
       >
@@ -74,22 +66,21 @@ export default function Header() {
       </button>
 
       <div className={styles.actions}>
-        <button 
-          className={styles.themeToggle} 
-          onClick={toggleTheme} 
+        <button
+          className={styles.themeToggle}
+          onClick={toggleTheme}
           aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
         >
           {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
 
-        <button className={styles.bellButton} aria-label="View notifications">
+        <button className={styles.bellButton} aria-label="Notifications" aria-disabled="true">
           <Bell size={20} />
-          <span className={styles.badge} aria-hidden="true" />
         </button>
 
-        <div className={styles.profileCard} role="button" tabIndex={0} aria-label="Open user menu">
-          <div className={styles.avatar} aria-hidden="true">JD</div>
-          <span className={styles.username}>John Doe</span>
+        <div className={styles.profileCard} role="button" tabIndex={0} aria-label="User menu">
+          <div className={styles.avatar} aria-hidden="true">T</div>
+          <span className={styles.username}>Teacher</span>
           <ChevronDown size={14} className={styles.chevron} aria-hidden="true" />
         </div>
       </div>
