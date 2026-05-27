@@ -1,21 +1,15 @@
-/**
- * CacheService — Dual-layer cache:
- *  - Layer 1: In-memory TTL Map (always available, zero latency)
- *  - Layer 2: Redis (when available, shared across server restarts)
- */
 import { redisConnection, redisAvailable } from '../config/queue';
 
-interface MemEntry<T> {
+interface CacheEntry<T> {
   data: T;
   expiresAt: number;
 }
 
-// ── In-Memory Cache ────────────────────────────────────────────────────────
 class MemoryCache {
-  private store = new Map<string, MemEntry<unknown>>();
-  private maxSize: number;
+  private store = new Map<string, CacheEntry<unknown>>();
+  private readonly maxSize: number;
 
-  constructor(maxSize = 500) {
+  constructor(maxSize: number) {
     this.maxSize = maxSize;
   }
 
@@ -30,10 +24,9 @@ class MemoryCache {
   }
 
   set<T>(key: string, data: T, ttlSeconds: number): void {
-    // Evict oldest entry if at capacity
     if (this.store.size >= this.maxSize) {
-      const firstKey = this.store.keys().next().value;
-      if (firstKey) this.store.delete(firstKey);
+      const oldest = this.store.keys().next().value;
+      if (oldest) this.store.delete(oldest);
     }
     this.store.set(key, { data, expiresAt: Date.now() + ttlSeconds * 1000 });
   }
@@ -43,98 +36,71 @@ class MemoryCache {
   }
 
   deleteByPrefix(prefix: string): void {
-    for (const k of this.store.keys()) {
-      if (k.startsWith(prefix)) this.store.delete(k);
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) this.store.delete(key);
     }
   }
 
   size(): number {
     return this.store.size;
   }
-
-  clear(): void {
-    this.store.clear();
-  }
 }
 
 const mem = new MemoryCache(200);
 
-// ── Cache Keys ────────────────────────────────────────────────────────────
 export const CK = {
-  assignmentList:  'assignments:list',
-  assignment: (id: string) => `assignments:${id}`,
-};
+  list: 'assignments:list',
+  detail: (id: string) => `assignments:${id}`,
+} as const;
 
-// ── TTLs (seconds) ────────────────────────────────────────────────────────
-const TTL = {
-  list:   20,   // List invalidated quickly — new assignments should show fast
-  detail: 120,  // Individual assignment cached for 2 minutes
-};
-
-// ── Public API ────────────────────────────────────────────────────────────
+const TTL = { list: 20, detail: 120 } as const;
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  // Try memory first
-  const memHit = mem.get<T>(key);
-  if (memHit !== null) {
-    return memHit;
-  }
+  const hit = mem.get<T>(key);
+  if (hit !== null) return hit;
 
-  // Try Redis
   if (redisAvailable && redisConnection) {
     try {
       const raw = await redisConnection.get(key);
       if (raw) {
         const parsed = JSON.parse(raw) as T;
-        // Backfill memory cache
         mem.set(key, parsed, TTL.detail);
         return parsed;
       }
-    } catch (err) {
-      console.warn('[Cache] Redis GET error for key:', key, err);
-    }
+    } catch {}
   }
 
   return null;
 }
 
 export async function cacheSet<T>(key: string, data: T, ttlSeconds: number): Promise<void> {
-  // Always write to memory
   mem.set(key, data, ttlSeconds);
 
-  // Write to Redis if available
   if (redisAvailable && redisConnection) {
     try {
       await redisConnection.set(key, JSON.stringify(data), 'EX', ttlSeconds);
-    } catch (err) {
-      console.warn('[Cache] Redis SET error for key:', key, err);
-    }
+    } catch {}
   }
 }
 
 export async function cacheDelete(key: string): Promise<void> {
   mem.delete(key);
+
   if (redisAvailable && redisConnection) {
     try {
       await redisConnection.del(key);
-    } catch (err) {
-      console.warn('[Cache] Redis DEL error for key:', key, err);
-    }
+    } catch {}
   }
 }
 
 export async function cacheDeletePrefix(prefix: string): Promise<void> {
   mem.deleteByPrefix(prefix);
+
   if (redisAvailable && redisConnection) {
     try {
-      // Scan for matching keys (safe for production — avoids KEYS * blocking)
       const keys = await redisConnection.keys(`${prefix}*`);
-      if (keys.length > 0) {
-        await redisConnection.del(...keys);
-      }
-    } catch (err) {
-      console.warn('[Cache] Redis prefix delete error:', err);
-    }
+      if (keys.length > 0) await redisConnection.del(...keys);
+    } catch {}
   }
 }
 
