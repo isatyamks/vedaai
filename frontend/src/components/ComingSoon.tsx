@@ -24,18 +24,18 @@ export default function ComingSoon({ title, description }: { title: string, desc
         width: '56px',
         height: '56px',
         borderRadius: '16px',
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.04)',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-sm)',
         marginBottom: '20px',
       }}>
-        <Blocks size={24} color="#64748b" />
+        <Blocks size={24} className="text-muted" style={{ color: 'var(--muted)' }} />
       </div>
       <h2 style={{
         fontSize: '22px',
         fontWeight: '600',
         letterSpacing: '-0.01em',
-        color: '#0f172a',
+        color: 'var(--primary)',
         marginBottom: '8px',
         fontFamily: 'var(--font-sans)'
       }}>
@@ -43,7 +43,7 @@ export default function ComingSoon({ title, description }: { title: string, desc
       </h2>
       <p style={{
         fontSize: '14px',
-        color: '#64748b',
+        color: 'var(--muted)',
         maxWidth: '400px',
         lineHeight: '1.5',
         fontFamily: 'var(--font-sans)'
@@ -53,12 +53,12 @@ export default function ComingSoon({ title, description }: { title: string, desc
       <div style={{
         marginTop: '24px',
         padding: '6px 16px',
-        background: '#f1f5f9',
-        border: '1px solid #e2e8f0',
+        background: 'var(--bg-hover)',
+        border: '1px solid var(--border)',
         borderRadius: '99px',
         fontSize: '11px',
         fontWeight: '600',
-        color: '#475569',
+        color: 'var(--secondary)',
         letterSpacing: '0.04em',
         textTransform: 'uppercase',
         fontFamily: 'var(--font-sans)'
