@@ -1,0 +1,322 @@
+.topbar {
+  position: fixed;
+  top: 16px;
+  left: calc(var(--sidebar-width) + 32px);
+  right: 16px;
+  height: 52px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  gap: 12px;
+  z-index: 90;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Page title */
+.pageTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  font-family: var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Sort dropdown ─────────────────────────── */
+
+.dropdownWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.filterBtnLabel strong {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.filterBtn:hover,
+.filterBtnActive {
+  background: var(--border);
+  border-color: var(--divider);
+  color: var(--primary);
+}
+
+.chevron {
+  color: var(--muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 200;
+  animation: dropIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.dropdownItem:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+.dropdownItemActive {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.checkIcon {
+  color: var(--brand-orange);
+  flex-shrink: 0;
+}
+
+/* ── Search ────────────────────────────────── */
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px 32px 7px 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--primary);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--secondary);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.searchClear {
+  position: absolute;
+  right: 9px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.searchClear:hover {
+  background: var(--primary);
+}
+
+/* ── Count label ───────────────────────────── */
+
+.countLabel {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Create button ─────────────────────────── */
+
+.createBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, #27272a, #09090b);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  border: 1px solid #3f3f46;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.createBtn:hover {
+  background: linear-gradient(180deg, #3f3f46, #18181b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* ── Status badges ─────────────────────────── */
+
+.readyBadge,
+.failedBadge,
+.processingBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.readyBadge {
+  background: var(--color-easy-bg);
+  color: var(--color-easy-text);
+  border: 1px solid var(--color-easy-border);
+}
+
+.failedBadge {
+  background: var(--color-hard-bg);
+  color: var(--color-hard-text);
+  border: 1px solid var(--color-hard-border);
+}
+
+.processingBadge {
+  background: var(--color-moderate-bg);
+  color: var(--color-moderate-text);
+  border: 1px solid var(--color-moderate-border);
+}
+
+/* ── Icon action button ────────────────────── */
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: var(--border);
+  color: var(--primary);
+}
+
+.iconBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Mobile ────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .topbar {
+    left: 0;
+    right: 0;
+    top: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 0 12px;
+  }
+
+  .countLabel {
+    display: none;
+  }
+
+  .searchWrap {
+    max-width: 160px;
+  }
+
+  .filterBtnLabel {
+    display: none;
+  }
+}

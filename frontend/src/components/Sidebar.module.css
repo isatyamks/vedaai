@@ -3,36 +3,64 @@
   height: calc(100vh - 32px);
   background-color: var(--bg-sidebar);
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 20px 14px;
   position: fixed;
   left: 16px;
   top: 16px;
   bottom: 16px;
   z-index: 100;
   transition: transform var(--transition-normal);
+  overflow: hidden;
 }
 
+/* Loading bar at top of sidebar */
+.loadingBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: transparent;
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+}
+
+.loadingBarFill {
+  height: 100%;
+  width: 100%;
+  background: var(--brand-gradient);
+  animation: loadingAnim 1.6s infinite ease-in-out;
+  transform-origin: 0% 50%;
+}
+
+@keyframes loadingAnim {
+  0%   { transform: translateX(-100%) scaleX(0.2); }
+  50%  { transform: translateX(-10%) scaleX(0.7); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}
+
+/* Logo */
 .logoArea {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 32px;
-  padding: 0 8px;
+  margin-bottom: 20px;
+  padding: 0 6px;
 }
 
 .logoImage {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   flex-shrink: 0;
   border-radius: 8px;
 }
 
 .logoText {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   font-family: var(--font-display);
   color: var(--primary);
@@ -43,6 +71,39 @@
   color: var(--brand-orange);
 }
 
+/* Back / breadcrumb button */
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+}
+
+.backBtn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backBtn:hover {
+  background: var(--border);
+  color: var(--primary);
+}
+
+/* Create button */
 .createBtn {
   display: flex;
   align-items: center;
@@ -50,13 +111,13 @@
   gap: 8px;
   background: linear-gradient(180deg, #27272a, #09090b);
   color: white;
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-radius: 99px;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13.5px;
   transition: all var(--transition-fast);
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   border: 1px solid #3f3f46;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
   width: 100%;
@@ -72,10 +133,11 @@
   background: linear-gradient(180deg, #3f3f46, #18181b);
 }
 
+/* Nav */
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
 }
 
@@ -83,10 +145,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 9px 12px;
   color: var(--secondary);
-  border-radius: 99px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
   font-weight: 500;
   transition: all var(--transition-fast);
 }
@@ -102,23 +164,34 @@
   font-weight: 600;
 }
 
+.navBadge {
+  background-color: var(--brand-orange);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+}
+
+/* Footer */
 .footer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
   margin-top: auto;
   border-top: 1px solid var(--border);
-  padding-top: 16px;
+  padding-top: 12px;
 }
 
 .settingsLink {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 9px 12px;
   color: var(--secondary);
-  border-radius: var(--radius-md);
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
   font-weight: 500;
   transition: all var(--transition-fast);
 }
@@ -128,65 +201,78 @@
   color: var(--primary);
 }
 
-.schoolProfile {
+/* User row */
+.userRow {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background-color: var(--bg-hover);
   border-radius: 12px;
-  border: none;
+  background: var(--bg-hover);
+  margin-top: 4px;
 }
 
-.schoolAvatar {
-  width: 36px;
-  height: 36px;
+.avatar {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #5c8772;
-  color: #ffffff;
+  background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.navBadge {
-  background-color: var(--brand-orange);
-  color: white;
-  font-size: 11px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  margin-left: auto;
+  font-size: 13px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.schoolInfo {
+.userInfo {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   flex: 1;
+  overflow: hidden;
+  min-width: 0;
 }
 
-.schoolName {
+.userName {
   font-size: 13px;
   font-weight: 600;
   color: var(--primary);
-  line-height: 1.2;
-  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
-.schoolCity {
-  font-size: 12px;
-  font-weight: 400;
+.userRole {
+  font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
+.themeBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--secondary);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.themeBtn:hover {
+  background: var(--border);
+  color: var(--primary);
+  transform: rotate(15deg);
+}
+
+/* Mobile bottom bar */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -197,7 +283,7 @@
     top: auto;
     left: 0;
     padding: 0 16px;
-    border-right: none;
+    border-radius: 0;
     border-top: 1px solid var(--border);
     justify-content: space-around;
     align-items: center;
@@ -206,7 +292,9 @@
 
   .logoArea,
   .createBtn,
-  .footer {
+  .backBtn,
+  .footer,
+  .loadingBar {
     display: none;
   }
 
@@ -224,10 +312,6 @@
     font-size: 10px;
     align-items: center;
     flex: 1;
-  }
-
-  .active {
-    background: var(--bg-hover);
     border-radius: var(--radius-sm);
   }
 }
