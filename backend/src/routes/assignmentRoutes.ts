@@ -30,13 +30,7 @@ const CreateSchema = z.object({
 });
 
 async function enqueue(id: string, configs: any[], prompt?: string): Promise<void> {
-  if (process.env.VERCEL) {
-    await processGenerationJob(id, configs, prompt);
-  } else if (redisAvailable && assessmentQueue) {
-    await assessmentQueue.add('generate-questions', { assignmentId: id, sectionConfigs: configs, prompt });
-  } else {
-    setImmediate(() => processGenerationJob(id, configs, prompt));
-  }
+  await processGenerationJob(id, configs, prompt);
 }
 
 const wrap = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
@@ -195,7 +189,8 @@ router.post('/', wrap(async (req, res) => {
   });
   await cacheDelete(CK.list);
   await enqueue(assignment._id.toString(), sections);
-  return res.status(201).json(assignment);
+  const updatedAssignment = await Assignment.findById(assignment._id);
+  return res.status(201).json(updatedAssignment);
 }));
 
 router.post('/:id/regenerate', wrap(async (req, res) => {
@@ -223,7 +218,8 @@ router.post('/:id/regenerate', wrap(async (req, res) => {
   await cacheDelete(CK.detail(req.params.id));
   await cacheDelete(CK.list);
   await enqueue(req.params.id, configs);
-  return res.json(assignment);
+  const updatedAssignment = await Assignment.findById(req.params.id);
+  return res.json(updatedAssignment);
 }));
 
 router.post('/:id/edit', wrap(async (req, res) => {
@@ -257,7 +253,8 @@ router.post('/:id/edit', wrap(async (req, res) => {
   await cacheDelete(CK.list);
 
   await enqueue(req.params.id, configs, prompt);
-  return res.json(assignment);
+  const updatedAssignment = await Assignment.findById(req.params.id);
+  return res.json(updatedAssignment);
 }));
 
 router.get('/:id/pdf', wrap(async (req, res) => {

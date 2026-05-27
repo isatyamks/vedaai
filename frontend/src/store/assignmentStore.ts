@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import io, { Socket } from 'socket.io-client';
 
 export interface IQuestion {
   _id?: string;
@@ -43,13 +42,6 @@ export interface ISectionConfig {
   difficulty: 'Easy' | 'Moderate' | 'Hard';
 }
 
-export interface IActiveJob {
-  assignmentId: string;
-  status: IAssignment['status'];
-  progress: number;
-  message?: string;
-}
-
 export interface CreateAssignmentPayload {
   title: string;
   subject: string;
@@ -65,7 +57,6 @@ interface AssignmentStore {
   assignments: IAssignment[];
   activeAssignment: IAssignment | null;
   isLoading: boolean;
-  activeJob: IActiveJob | null;
   errorMessage: string | null;
   searchQuery: string;
   sortBy: 'newest' | 'oldest' | 'name';
@@ -80,29 +71,19 @@ interface AssignmentStore {
   regenerateAssignment: (id: string, customSections?: ISectionConfig[]) => Promise<void>;
   editAssignment: (id: string, userPrompt: string) => Promise<void>;
   selectAssignment: (assignment: IAssignment | null) => void;
-  clearActiveJob: () => void;
-  setupSocketListener: (assignmentId: string) => void;
 }
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || 
   (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : 'https://vedaai-backend.vercel.app');
-let socket: Socket | null = null;
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
-function disconnectSocket(): void {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-}
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   assignments: [],
   activeAssignment: null,
   isLoading: false,
-  activeJob: null,
   errorMessage: null,
   searchQuery: '',
   sortBy: 'newest',
@@ -168,18 +149,11 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       const assignment: IAssignment = await res.json();
 
       set((state) => ({
-        assignments: [assignment, ...state.assignments],
-        activeJob: {
-          assignmentId: assignment._id,
-          status: assignment.status,
-          progress: assignment.progress,
-          message: assignment.status === 'completed'
-            ? 'Test paper created successfully!'
-            : 'Assignment queued for generation...',
-        },
+        assignments: [assignment, ...state.assignments.filter(a => a._id !== assignment._id)],
+        activeAssignment: assignment,
       }));
 
-      get().setupSocketListener(assignment._id);
+      get().showToast('Test paper created successfully!', 'success');
       return assignment._id;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error creating assignment.';
@@ -210,17 +184,8 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set((state) => ({
         activeAssignment: updated,
         assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
-        activeJob: {
-          assignmentId: id,
-          status: updated.status,
-          progress: updated.progress,
-          message: updated.status === 'completed'
-            ? 'Regeneration completed successfully!'
-            : 'Regeneration queued...',
-        },
       }));
-
-      get().setupSocketListener(id);
+      get().showToast('Regeneration completed successfully!', 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error during regeneration.';
       set({ errorMessage: msg });
@@ -249,17 +214,8 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set((state) => ({
         activeAssignment: updated,
         assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
-        activeJob: {
-          assignmentId: id,
-          status: updated.status,
-          progress: updated.progress,
-          message: updated.status === 'completed'
-            ? 'AI Edit completed successfully!'
-            : 'AI Edit queued...',
-        },
       }));
-
-      get().setupSocketListener(id);
+      get().showToast('AI Edit completed successfully!', 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error during AI edit.';
       set({ errorMessage: msg });
@@ -271,32 +227,5 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
 
   selectAssignment: (assignment) => {
     set({ activeAssignment: assignment, errorMessage: null });
-  },
-
-  clearActiveJob: () => {
-    disconnectSocket();
-    set({ activeJob: null });
-  },
-
-  setupSocketListener: (assignmentId) => {
-    disconnectSocket();
-
-    socket = io(API);
-
-    socket.on('connect', () => {
-      socket?.emit('join_assignment', assignmentId);
-    });
-
-    socket.on('progress_update', (data: IActiveJob) => {
-      if (data.assignmentId !== assignmentId) return;
-
-      set({ activeJob: data });
-
-      if (data.status === 'completed' || data.status === 'failed') {
-        disconnectSocket();
-        get().fetchAssignments();
-        get().fetchAssignmentDetails(assignmentId);
-      }
-    });
   },
 }));
