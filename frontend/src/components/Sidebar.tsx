@@ -7,16 +7,19 @@ import { usePathname } from 'next/navigation';
 import { LayoutGrid, Users, FileText, BarChart3, Clock, Settings, Sparkles, School, Library } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
-const NAV_ITEMS = [
-  { icon: LayoutGrid, label: 'Home', path: '/home' },
-  { icon: Users, label: 'My Classes', path: '/groups' },
-  { icon: FileText, label: 'Assignments', path: '/' },
-  { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-  { icon: Clock, label: 'My Library', path: '/library', badge: 32 },
-] as const;
+import { useAssignmentStore } from '../store/assignmentStore';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { assignments } = useAssignmentStore();
+
+  const navItems = [
+    { icon: LayoutGrid, label: 'Home', path: '/home' },
+    { icon: Users, label: 'My Classes', path: '/groups' },
+    { icon: FileText, label: 'Assignments', path: '/', badge: assignments.length > 0 ? assignments.length : undefined },
+    { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+    { icon: Clock, label: 'My Library', path: '/library'},
+  ];
 
   return (
     <aside className={styles.sidebar}>
@@ -38,7 +41,7 @@ export default function Sidebar() {
       </Link>
 
       <nav className={styles.nav} aria-label="Main navigation">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const label = item.label;
           const path = item.path;
