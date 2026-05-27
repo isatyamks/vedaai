@@ -8,8 +8,7 @@ import ToastContainer from '../components/ToastContainer';
 
 export const metadata: Metadata = {
   title: 'Veda AI — School Test & Exam Maker',
-  description:
-    'Create structured test papers and school exam sheets for modern classrooms.',
+  description: 'Create structured test papers and school exam sheets for modern classrooms.',
   keywords: ['assessment platform', 'question paper generator', 'Veda AI', 'exam creator', 'educational software'],
 };
 
@@ -28,3 +27,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
+

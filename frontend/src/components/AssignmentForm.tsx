@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, Plus, X, Calendar } from 'lucide-react';
+import { Upload, Plus, X, Calendar, FileText, AlertCircle, Mic, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAssignmentStore, ISectionConfig } from '../store/assignmentStore';
 import styles from './AssignmentForm.module.css';
 
@@ -22,280 +22,24 @@ const TYPE_OPTIONS: TypeOption[] = [
   { label: 'Numerical Problems', value: 'Long' },
 ];
 
-const SUBJECTS = [
-  'Science', 'Mathematics', 'Physics', 'Chemistry',
-  'Biology', 'Computer Science', 'History', 'Geography', 'English',
-];
 
-const GRADES = [
-  'Class 6', 'Class 7', 'Class 8', 'Class 9',
-  'Class 10', 'Class 11', 'Class 12',
-];
-
-const NCERT_CHAPTERS: Record<string, Record<string, string[]>> = {
-  'Class 10': {
-    'Science': [
-      'Chemical Reactions and Equations',
-      'Acids, Bases and Salts',
-      'Metals and Non-metals',
-      'Carbon and its Compounds',
-      'Life Processes',
-      'Control and Coordination',
-      'How do Organisms Reproduce?',
-      'Heredity and Evolution',
-      'Light — Reflection and Refraction',
-      'Human Eye and Colorful World',
-      'Electricity',
-      'Magnetic Effects of Electric Current',
-      'Our Environment'
-    ],
-    'Mathematics': [
-      'Real Numbers',
-      'Polynomials',
-      'Pair of Linear Equations in Two Variables',
-      'Quadratic Equations',
-      'Arithmetic Progressions',
-      'Triangles',
-      'Coordinate Geometry',
-      'Introduction to Trigonometry',
-      'Some Applications of Trigonometry',
-      'Circles',
-      'Surface Areas and Volumes',
-      'Statistics',
-      'Probability'
-    ],
-  },
-  'Class 9': {
-    'Science': [
-      'Matter in Our Surroundings',
-      'Is Matter Around Us Pure',
-      'Atoms and Molecules',
-      'Structure of the Atom',
-      'The Fundamental Unit of Life',
-      'Tissues',
-      'Motion',
-      'Force and Laws of Motion',
-      'Gravitation',
-      'Work and Energy',
-      'Sound',
-      'Improvement in Food Resources'
-    ],
-    'Mathematics': [
-      'Number Systems',
-      'Polynomials',
-      'Coordinate Geometry',
-      'Linear Equations in Two Variables',
-      'Introduction to Euclid\'s Geometry',
-      'Lines and Angles',
-      'Triangles',
-      'Quadrilaterals',
-      'Circles',
-      'Heron\'s Formula',
-      'Surface Areas and Volumes',
-      'Statistics'
-    ],
-  },
-  'Class 12': {
-    'Physics': [
-      'Electric Charges and Fields',
-      'Electrostatic Potential and Capacitance',
-      'Current Electricity',
-      'Moving Charges and Magnetism',
-      'Magnetism and Matter',
-      'Electromagnetic Induction',
-      'Alternating Current',
-      'Electromagnetic Waves',
-      'Ray Optics and Optical Instruments',
-      'Wave Optics',
-      'Dual Nature of Radiation and Matter',
-      'Atoms',
-      'Nuclei',
-      'Semiconductor Electronics'
-    ],
-    'Chemistry': [
-      'Solutions',
-      'Electrochemistry',
-      'Chemical Kinetics',
-      'd- and f-Block Elements',
-      'Coordination Compounds',
-      'Haloalkanes and Haloarenes',
-      'Alcohols, Phenols and Ethers',
-      'Aldehydes, Ketones and Carboxylic Acids',
-      'Amines',
-      'Biomolecules'
-    ],
-    'Biology': [
-      'Sexual Reproduction in Flowering Plants',
-      'Human Reproduction',
-      'Reproductive Health',
-      'Principles of Inheritance and Variation',
-      'Molecular Basis of Inheritance',
-      'Evolution',
-      'Human Health and Disease',
-      'Microbes in Human Welfare',
-      'Biotechnology: Principles and Processes',
-      'Biotechnology and its Applications',
-      'Organisms and Populations',
-      'Ecosystem',
-      'Biodiversity and Conservation'
-    ],
-  },
-  'Class 11': {
-    'Physics': [
-      'Units and Measurements',
-      'Motion in a Straight Line',
-      'Motion in a Plane',
-      'Laws of Motion',
-      'Work, Energy and Power',
-      'System of Particles and Rotational Motion',
-      'Gravitation',
-      'Mechanical Properties of Solids',
-      'Mechanical Properties of Fluids',
-      'Thermal Properties of Matter',
-      'Thermodynamics',
-      'Kinetic Theory',
-      'Oscillations',
-      'Waves'
-    ],
-    'Chemistry': [
-      'Some Basic Concepts of Chemistry',
-      'Structure of Atom',
-      'Classification of Elements and Periodicity in Properties',
-      'Chemical Bonding and Molecular Structure',
-      'Chemical Thermodynamics',
-      'Equilibrium',
-      'Redox Reactions',
-      'Organic Chemistry — Some Basic Principles and Techniques',
-      'Hydrocarbons'
-    ],
-    'Biology': [
-      'The Living World',
-      'Biological Classification',
-      'Plant Kingdom',
-      'Animal Kingdom',
-      'Morphology of Flowering Plants',
-      'Anatomy of Flowering Plants',
-      'Structural Organisation in Animals',
-      'Cell: The Unit of Life',
-      'Biomolecules',
-      'Cell Cycle and Cell Division',
-      'Photosynthesis in Higher Plants',
-      'Respiration in Plants',
-      'Plant Growth and Development',
-      'Breathing and Exchange of Gases',
-      'Body Fluids and Circulation',
-      'Excretory Products and their Elimination',
-      'Locomotion and Movement',
-      'Neural Control and Coordination',
-      'Chemical Coordination and Integration'
-    ],
-  },
-  'Class 8': {
-    'Science': [
-      'Crop Production and Management',
-      'Microorganisms: Friend and Foe',
-      'Coal and Petroleum',
-      'Combustion and Flame',
-      'Conservation of Plants and Animals',
-      'Reproduction in Animals',
-      'Reaching the Age of Adolescence',
-      'Force and Pressure',
-      'Friction',
-      'Sound',
-      'Chemical Effects of Electric Current',
-      'Some Natural Phenomena',
-      'Light'
-    ],
-    'Mathematics': [
-      'Rational Numbers',
-      'Linear Equations in One Variable',
-      'Understanding Quadrilaterals',
-      'Data Handling',
-      'Squares and Square Roots',
-      'Cubes and Cube Roots',
-      'Comparing Quantities',
-      'Algebraic Expressions and Identities',
-      'Mensuration',
-      'Exponents and Powers',
-      'Direct and Inverse Proportions',
-      'Factorisation',
-      'Introduction to Graphs'
-    ]
-  },
-};
-
-function getNCERTChapters(selectedClass: string, selectedSubject: string): string[] {
-  if (!selectedClass || !selectedSubject) return [];
-  
-  const classChapters = NCERT_CHAPTERS[selectedClass];
-  if (classChapters && classChapters[selectedSubject]) {
-    return classChapters[selectedSubject];
-  }
-  
-  const sub = selectedSubject.toLowerCase();
-  if (sub.includes('math')) {
-    return [
-      'Chapter 1: Number Systems & Arithmetic',
-      'Chapter 2: Algebraic Expressions & Equations',
-      'Chapter 3: Geometry & Coordinate Shapes',
-      'Chapter 4: Mensuration & Surface Areas',
-      'Chapter 5: Data Handling, Statistics & Probability'
-    ];
-  }
-  if (sub.includes('science') || sub.includes('physics') || sub.includes('chem') || sub.includes('bio')) {
-    return [
-      'Chapter 1: Structure & Properties of Matter',
-      'Chapter 2: Cells, Life Processes & Living Organisms',
-      'Chapter 3: Motion, Forces & Law of Inertia',
-      'Chapter 4: Work, Heat, Energy & Power Cycles',
-      'Chapter 5: Natural Resources, Ecology & Environment'
-    ];
-  }
-  if (sub.includes('history') || sub.includes('social') || sub.includes('civics') || sub.includes('geography')) {
-    return [
-      'Chapter 1: Historical Eras, Cultures & Modernity',
-      'Chapter 2: Nationalism, Struggle & Constitutional Design',
-      'Chapter 3: Geography, Ecosystems & Resources',
-      'Chapter 4: Economic Sectors, Development & Trade',
-      'Chapter 5: Globalization, Human Capital & Demography'
-    ];
-  }
-  if (sub.includes('computer') || sub.includes('coding') || sub.includes('tech')) {
-    return [
-      'Chapter 1: Digital Systems & Hardware Principles',
-      'Chapter 2: Core Algorithms & Programming Methods',
-      'Chapter 3: Database structures & Queries',
-      'Chapter 4: Cyber Security, Ethics & Privacy rules',
-      'Chapter 5: Network Protocols & Internet Services'
-    ];
-  }
-  return [
-    'Chapter 1: Foundation Concepts & Basic Principles',
-    'Chapter 2: Analysis, Structure & In-depth Exercises',
-    'Chapter 3: Advanced Applications & Critical Problems',
-    'Chapter 4: Core Themes, Literature Reading & Writing',
-    'Chapter 5: Practice Exercises, Review & Case Studies'
-  ];
-}
 
 interface SectionRow {
-  id: number;
+  id: string;
   typeLabel: string;
   backendType: QuestionType;
   count: number;
   marks: number;
 }
 
-let idCounter = 2;
-
 const DEFAULT_ROWS: SectionRow[] = [
-  { id: 1, typeLabel: 'Multiple Choice (MCQ)', backendType: 'MCQ', count: 5, marks: 1 },
-  { id: 2, typeLabel: 'Short Answer Questions', backendType: 'Short', count: 5, marks: 3 },
+  { id: 'default-row-1', typeLabel: 'Multiple Choice (MCQ)', backendType: 'MCQ', count: 5, marks: 1 },
+  { id: 'default-row-2', typeLabel: 'Short Answer Questions', backendType: 'Short', count: 5, marks: 3 },
 ];
 
 export default function AssignmentForm() {
   const router = useRouter();
-  const { createAssignment, isLoading, errorMessage, showToast } = useAssignmentStore();
+  const { createAssignment, isLoading, showToast, errorMessage } = useAssignmentStore();
 
   const [subject, setSubject] = useState('');
   const [grade, setGrade] = useState('');
@@ -308,11 +52,55 @@ export default function AssignmentForm() {
   const [rows, setRows] = useState<SectionRow[]>(DEFAULT_ROWS);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const availableChapters = getNCERTChapters(grade, subject);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [isFetchingSubjects, setIsFetchingSubjects] = useState(false);
+  const [availableChapters, setAvailableChapters] = useState<string[]>([]);
+  const [isFetchingChapters, setIsFetchingChapters] = useState(false);
+  const [availableGrades, setAvailableGrades] = useState<string[]>([]);
+  const [isFetchingGrades, setIsFetchingGrades] = useState(false);
+
+  const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
+
+  useEffect(() => {
+    let active = true;
+    setIsFetchingGrades(true);
+    fetch(`${API}/api/assignments/syllabus/grades`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((d) => { if (active) setAvailableGrades(d.grades || []); })
+      .catch(() => { if (active) setAvailableGrades([]); })
+      .finally(() => { if (active) setIsFetchingGrades(false); });
+    return () => { active = false; };
+  }, [API]);
+
+  useEffect(() => {
+    setSubject('');
+    setAvailableSubjects([]);
+    setSelectedChapters([]);
+    setAvailableChapters([]);
+    if (!grade) return;
+    let active = true;
+    setIsFetchingSubjects(true);
+    fetch(`${API}/api/assignments/syllabus/subjects?grade=${encodeURIComponent(grade)}`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((d) => { if (active) setAvailableSubjects(d.subjects || []); })
+      .catch(() => { if (active) setAvailableSubjects([]); })
+      .finally(() => { if (active) setIsFetchingSubjects(false); });
+    return () => { active = false; };
+  }, [grade, API]);
 
   useEffect(() => {
     setSelectedChapters([]);
-  }, [grade, subject]);
+    setAvailableChapters([]);
+    if (!grade || !subject) return;
+    let active = true;
+    setIsFetchingChapters(true);
+    fetch(`${API}/api/assignments/syllabus/chapters?grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((d) => { if (active) setAvailableChapters(d.chapters || []); })
+      .catch(() => { if (active) setAvailableChapters([]); })
+      .finally(() => { if (active) setIsFetchingChapters(false); });
+    return () => { active = false; };
+  }, [grade, subject, API]);
 
   const handleToggleChapter = useCallback((chapterName: string) => {
     setSelectedChapters((prev) =>
@@ -323,11 +111,10 @@ export default function AssignmentForm() {
   }, []);
 
   const handleSelectAllChapters = useCallback(() => {
-    const chapters = getNCERTChapters(grade, subject);
     setSelectedChapters((prev) =>
-      prev.length === chapters.length ? [] : [...chapters]
+      prev.length === availableChapters.length ? [] : [...availableChapters]
     );
-  }, [grade, subject]);
+  }, [availableChapters]);
 
   const totalQuestions = rows.reduce((sum, r) => sum + r.count, 0);
   const totalMarks = rows.reduce((sum, r) => sum + r.count * r.marks, 0);
@@ -340,18 +127,17 @@ export default function AssignmentForm() {
   if (rows.length === 0) missingFields.push('Sections');
 
   const addRow = useCallback(() => {
-    idCounter++;
     setRows((prev) => [
       ...prev,
-      { id: idCounter, typeLabel: TYPE_OPTIONS[0].label, backendType: 'MCQ', count: 5, marks: 1 },
+      { id: crypto.randomUUID(), typeLabel: TYPE_OPTIONS[0].label, backendType: 'MCQ', count: 5, marks: 1 },
     ]);
   }, []);
 
-  const removeRow = useCallback((id: number) => {
+  const removeRow = useCallback((id: string) => {
     setRows((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
-  const updateRowType = useCallback((id: number, label: string) => {
+  const updateRowType = useCallback((id: string, label: string) => {
     const match = TYPE_OPTIONS.find((o) => o.label === label);
     setRows((prev) =>
       prev.map((r) =>
@@ -360,7 +146,7 @@ export default function AssignmentForm() {
     );
   }, []);
 
-  const adjustField = useCallback((id: number, field: 'count' | 'marks', delta: number) => {
+  const adjustField = useCallback((id: string, field: 'count' | 'marks', delta: number) => {
     setRows((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: Math.max(1, r[field] + delta) } : r))
     );
@@ -386,7 +172,7 @@ export default function AssignmentForm() {
     if (!dueDate) errs.dueDate = 'Due date is required.';
     if (rows.length === 0) errs.rows = 'Add at least one question section.';
     setErrors(errs);
-    
+
     const hasErrors = Object.keys(errs).length > 0;
     if (hasErrors) {
       showToast('Please select all required fields to create the test paper.', 'error');
@@ -416,9 +202,7 @@ export default function AssignmentForm() {
       setCount,
       chapters: selectedChapters,
     });
-    if (id) {
-      router.push('/');
-    }
+    if (id) router.push('/');
   };
 
   return (
@@ -426,7 +210,7 @@ export default function AssignmentForm() {
       <form id="assignment-create-form" className={styles.formContainer} onSubmit={handleSubmit} noValidate>
         <div className={styles.formCard}>
           <h3 className={styles.cardSectionTitle}>1. General Details</h3>
-          
+
           {!uploadedFile && !isUploading && (
             <label className={styles.uploadZone} htmlFor="file-upload">
               <input
@@ -471,31 +255,47 @@ export default function AssignmentForm() {
 
           <div className={styles.fieldRow}>
             <div className={styles.fieldGroup}>
-              <label htmlFor="subject-select" className={styles.fieldLabel}>Subject</label>
-              <select
-                id="subject-select"
-                className={styles.typeSelect}
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-              >
-                <option value="">Select Subject</option>
-                {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
-              </select>
-              {errors.subject && <span className={styles.errorMsg} role="alert">{errors.subject}</span>}
-            </div>
-
-            <div className={styles.fieldGroup}>
               <label htmlFor="grade-select" className={styles.fieldLabel}>Class / Grade</label>
               <select
                 id="grade-select"
                 className={styles.typeSelect}
                 value={grade}
                 onChange={(e) => setGrade(e.target.value)}
+                disabled={isFetchingGrades}
               >
-                <option value="">Select Class</option>
-                {GRADES.map((g) => <option key={g}>{g}</option>)}
+                {isFetchingGrades ? (
+                  <option value="">Loading Classes...</option>
+                ) : (
+                  <>
+                    <option value="">Select Class</option>
+                    {availableGrades.map((g) => <option key={g} value={g}>{g}</option>)}
+                  </>
+                )}
               </select>
               {errors.grade && <span className={styles.errorMsg} role="alert">{errors.grade}</span>}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label htmlFor="subject-select" className={styles.fieldLabel}>Subject</label>
+              <select
+                id="subject-select"
+                className={styles.typeSelect}
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                disabled={!grade || isFetchingSubjects}
+              >
+                {!grade ? (
+                  <option value="">Select Class First</option>
+                ) : isFetchingSubjects ? (
+                  <option value="">Loading subjects...</option>
+                ) : (
+                  <>
+                    <option value="">Select Subject</option>
+                    {availableSubjects.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </>
+                )}
+              </select>
+              {errors.subject && <span className={styles.errorMsg} role="alert">{errors.subject}</span>}
             </div>
           </div>
 
@@ -523,10 +323,10 @@ export default function AssignmentForm() {
                 value={setCount}
                 onChange={(e) => setSetCount(Number(e.target.value))}
               >
-                <option value={1}>1 Set (Default)</option>
-                <option value={2}>2 Sets (Anti-Cheating)</option>
-                <option value={3}>3 Sets (Anti-Cheating)</option>
-                <option value={4}>4 Sets (Anti-Cheating)</option>
+                <option value={1}>1 Set</option>
+                <option value={2}>2 Sets</option>
+                <option value={3}>3 Sets</option>
+                <option value={4}>4 Sets</option>
               </select>
             </div>
           </div>
@@ -545,7 +345,7 @@ export default function AssignmentForm() {
               </button>
             )}
           </div>
-          
+
           {availableChapters.length > 0 ? (
             <div className={styles.chapterGrid}>
               {availableChapters.map((chapter) => {
@@ -560,7 +360,7 @@ export default function AssignmentForm() {
                       type="checkbox"
                       className={styles.chapterCheckbox}
                       checked={isActive}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       aria-label={`Cover chapter ${chapter}`}
                     />
                     <span className={styles.chapterName}>{chapter}</span>
@@ -570,14 +370,14 @@ export default function AssignmentForm() {
             </div>
           ) : (
             <div className={styles.emptyChaptersPrompt}>
-              <span>Please select both a Subject and Class / Grade in Card 1 to load NCERT base chapters.</span>
+              <span>Please select both a Class / Grade and Subject in Card 1 to load syllabus chapters.</span>
             </div>
           )}
         </div>
 
         <div className={styles.formCard}>
           <h3 className={styles.cardSectionTitle}>2. Question Layout</h3>
-          
+
           <div className={styles.tableSection}>
             <div className={styles.tableHeader} role="row">
               <span role="columnheader">Type of Questions</span>

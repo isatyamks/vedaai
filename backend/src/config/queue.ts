@@ -16,6 +16,8 @@ export async function initQueue(): Promise<void> {
       retryStrategy: () => null,
     });
 
+    conn.on('error', () => {});
+
     await conn.connect();
     await conn.ping();
 

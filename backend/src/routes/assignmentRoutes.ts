@@ -1,175 +1,155 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import Assignment from '../models/Assignment';
+import Syllabus from '../models/Syllabus';
 import { assessmentQueue, redisAvailable } from '../config/queue';
 import { processGenerationJob } from '../workers/generationWorker';
 import { generateAssignmentPDF } from '../services/pdfService';
-import {
-  cacheGet,
-  cacheSet,
-  cacheDelete,
-  CK,
-  getCacheTTL,
-  getCacheStats,
-} from '../services/cacheService';
+import { cacheGet, cacheSet, cacheDelete, CK, getCacheTTL, getCacheStats } from '../services/cacheService';
 
 const router = Router();
 const TTL = getCacheTTL();
 
-const VALID_TYPES = ['MCQ', 'Short', 'Long'] as const;
-const VALID_DIFFICULTIES = ['Easy', 'Moderate', 'Hard'] as const;
+const SectionSchema = z.object({
+  title: z.string().min(1),
+  type: z.enum(['MCQ', 'Short', 'Long']),
+  count: z.number().int().positive(),
+  marksPerQuestion: z.number().positive(),
+  difficulty: z.enum(['Easy', 'Moderate', 'Hard']),
+});
 
-function validateSections(sections: any[]): string | null {
-  for (let i = 0; i < sections.length; i++) {
-    const s = sections[i];
-    if (!s.title?.trim()) return `Section ${i + 1} is missing a title.`;
-    if (!VALID_TYPES.includes(s.type)) return `Section ${i + 1} has an invalid type.`;
-    if (!s.count || s.count <= 0) return `Section ${i + 1} must have a positive question count.`;
-    if (!s.marksPerQuestion || s.marksPerQuestion <= 0) return `Section ${i + 1} must have positive marks per question.`;
-    if (!VALID_DIFFICULTIES.includes(s.difficulty)) return `Section ${i + 1} has an invalid difficulty.`;
-  }
-  return null;
-}
+const CreateSchema = z.object({
+  title: z.string().min(1).trim(),
+  subject: z.string().min(1).trim(),
+  grade: z.string().min(1).trim(),
+  dueDate: z.string().min(1),
+  additionalInstructions: z.string().optional().default(''),
+  sections: z.array(SectionSchema).min(1),
+  setCount: z.number().int().min(1).max(4).optional().default(1),
+  chapters: z.array(z.string()).optional().default([]),
+});
 
-async function enqueueOrProcess(assignmentId: string, sectionConfigs: any[]): Promise<void> {
+async function enqueue(id: string, configs: any[]): Promise<void> {
   if (process.env.VERCEL) {
-    await processGenerationJob(assignmentId, sectionConfigs);
+    await processGenerationJob(id, configs);
   } else if (redisAvailable && assessmentQueue) {
-    await assessmentQueue.add('generate-questions', { assignmentId, sectionConfigs });
+    await assessmentQueue.add('generate-questions', { assignmentId: id, sectionConfigs: configs });
   } else {
-    setImmediate(() => processGenerationJob(assignmentId, sectionConfigs));
+    setImmediate(() => processGenerationJob(id, configs));
   }
 }
 
-router.get('/', async (_req: Request, res: Response) => {
-  try {
-    const cached = await cacheGet<any[]>(CK.list);
-    if (cached) return res.json(cached);
+const wrap = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
+  (req: Request, res: Response, next: NextFunction) => fn(req, res, next).catch(next);
 
-    const assignments = await Assignment.find().sort({ createdAt: -1 });
-    await cacheSet(CK.list, assignments, TTL.list);
-    return res.json(assignments);
-  } catch {
-    return res.status(500).json({ error: 'Failed to retrieve assignments.' });
-  }
-});
+router.get('/cache/stats', (_req, res) => res.json({ ...getCacheStats(), redisAvailable }));
 
-router.get('/cache/stats', (_req: Request, res: Response) => {
-  res.json({ ...getCacheStats(), redisAvailable });
-});
+router.get('/syllabus/grades', wrap(async (_req, res) => {
+  const key = `syllabus:grades`;
+  const cached = await cacheGet<string[]>(key);
+  if (cached) return res.json({ grades: cached });
+  const grades = await Syllabus.distinct('gradeClass');
+  const sorted = grades.sort((a, b) => {
+    const numA = parseInt(a.replace(/[^\d]/g, '')) || 0;
+    const numB = parseInt(b.replace(/[^\d]/g, '')) || 0;
+    return numA - numB;
+  });
+  await cacheSet(key, sorted, 3600);
+  return res.json({ grades: sorted });
+}));
 
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const cacheKey = CK.detail(id);
+router.get('/syllabus/subjects', wrap(async (req, res) => {
+  const { grade } = req.query;
+  if (!grade) return res.status(400).json({ error: 'grade is required.' });
+  const key = `syllabus:subjects:${grade}`;
+  const cached = await cacheGet<string[]>(key);
+  if (cached) return res.json({ subjects: cached });
+  const subjects = await Syllabus.find({ gradeClass: String(grade).trim() }).distinct('subjectName');
+  const sorted = subjects.sort();
+  await cacheSet(key, sorted, 3600);
+  return res.json({ subjects: sorted });
+}));
 
-    const cached = await cacheGet<any>(cacheKey);
-    if (cached) return res.json(cached);
+router.get('/syllabus/chapters', wrap(async (req, res) => {
+  const { grade, subject } = req.query;
+  if (!grade || !subject) return res.status(400).json({ error: 'grade and subject are required.' });
+  const key = `syllabus:chapters:${grade}:${subject}`;
+  const cached = await cacheGet<string[]>(key);
+  if (cached) return res.json({ chapters: cached });
+  const doc = await Syllabus.findOne({ gradeClass: String(grade).trim(), subjectName: String(subject).trim() });
+  const chapters = doc?.chapterList ?? [];
+  await cacheSet(key, chapters, 3600);
+  return res.json({ chapters });
+}));
 
-    const assignment = await Assignment.findById(id);
-    if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
+router.get('/', wrap(async (_req, res) => {
+  const cached = await cacheGet<any[]>(CK.list);
+  if (cached) return res.json(cached);
+  const data = await Assignment.find().sort({ createdAt: -1 }).lean();
+  await cacheSet(CK.list, data, TTL.list);
+  return res.json(data);
+}));
 
-    if (assignment.status === 'completed' || assignment.status === 'failed') {
-      await cacheSet(cacheKey, assignment, TTL.detail);
-    }
+router.get('/:id', wrap(async (req, res) => {
+  const key = CK.detail(req.params.id);
+  const cached = await cacheGet<any>(key);
+  if (cached) return res.json(cached);
+  const doc = await Assignment.findById(req.params.id).lean();
+  if (!doc) return res.status(404).json({ error: 'Assignment not found.' });
+  if (doc.status === 'completed' || doc.status === 'failed') await cacheSet(key, doc, TTL.detail);
+  return res.json(doc);
+}));
 
-    return res.json(assignment);
-  } catch {
-    return res.status(500).json({ error: 'Failed to retrieve assignment.' });
-  }
-});
+router.post('/', wrap(async (req, res) => {
+  const result = CreateSchema.safeParse(req.body);
+  if (!result.success) return res.status(400).json({ error: result.error.errors[0]?.message });
+  const { title, subject, grade, dueDate, additionalInstructions, sections, setCount, chapters } = result.data;
+  const assignment = await Assignment.create({
+    title, subject, grade,
+    dueDate: new Date(dueDate),
+    additionalInstructions,
+    status: 'queued', progress: 0,
+    sections: [], sets: [],
+    setCount, chapters,
+  });
+  await cacheDelete(CK.list);
+  await enqueue(assignment._id.toString(), sections);
+  return res.status(201).json(assignment);
+}));
 
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { title, subject, grade, dueDate, additionalInstructions, sections, setCount, chapters } = req.body;
+router.post('/:id/regenerate', wrap(async (req, res) => {
+  const assignment = await Assignment.findById(req.params.id);
+  if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
+  const configs = req.body.sections?.length
+    ? req.body.sections
+    : assignment.sections.map((sec) => {
+        const q = sec.questions[0];
+        return {
+          title: sec.title,
+          type: q?.options?.length ? 'MCQ' : (q?.marks ?? 0) > 6 ? 'Long' : 'Short',
+          count: sec.questions.length,
+          marksPerQuestion: q?.marks ?? 5,
+          difficulty: q?.difficulty ?? 'Moderate',
+        };
+      });
+  if (!configs.length) return res.status(400).json({ error: 'No section configs available.' });
+  assignment.status = 'queued';
+  assignment.progress = 0;
+  assignment.sections = [];
+  assignment.sets = [];
+  assignment.errorMessage = undefined;
+  await assignment.save();
+  await cacheDelete(CK.detail(req.params.id));
+  await cacheDelete(CK.list);
+  await enqueue(req.params.id, configs);
+  return res.json(assignment);
+}));
 
-    if (!title?.trim()) return res.status(400).json({ error: 'Assignment title is required.' });
-    if (!subject?.trim()) return res.status(400).json({ error: 'Subject area is required.' });
-    if (!grade?.trim()) return res.status(400).json({ error: 'Grade is required.' });
-    if (!dueDate) return res.status(400).json({ error: 'Due date is required.' });
-    if (!Array.isArray(sections) || sections.length === 0) {
-      return res.status(400).json({ error: 'At least one section must be configured.' });
-    }
-
-    const sectionError = validateSections(sections);
-    if (sectionError) return res.status(400).json({ error: sectionError });
-
-    const assignment = await Assignment.create({
-      title,
-      subject,
-      grade,
-      dueDate: new Date(dueDate),
-      additionalInstructions: additionalInstructions ?? '',
-      status: 'queued',
-      progress: 0,
-      sections: [],
-      sets: [],
-      setCount: setCount ? Math.min(Math.max(Number(setCount), 1), 4) : 1,
-      chapters: Array.isArray(chapters) ? chapters : [],
-    });
-
-    await cacheDelete(CK.list);
-    await enqueueOrProcess(assignment._id.toString(), sections);
-
-    return res.status(201).json(assignment);
-  } catch {
-    return res.status(500).json({ error: 'Failed to create assignment.' });
-  }
-});
-
-router.post('/:id/regenerate', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { sections } = req.body;
-
-    const assignment = await Assignment.findById(id);
-    if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
-
-    const configsToUse = sections?.length
-      ? sections
-      : assignment.sections.map((sec) => {
-          const firstQ = sec.questions[0];
-          return {
-            title: sec.title,
-            type: firstQ?.options?.length ? 'MCQ' : (firstQ?.marks ?? 0) > 6 ? 'Long' : 'Short',
-            count: sec.questions.length,
-            marksPerQuestion: firstQ?.marks ?? 5,
-            difficulty: firstQ?.difficulty ?? 'Moderate',
-          };
-        });
-
-    if (configsToUse.length === 0) {
-      return res.status(400).json({ error: 'No section configs available for regeneration.' });
-    }
-
-    assignment.status = 'queued';
-    assignment.progress = 0;
-    assignment.sections = [];
-    assignment.sets = [];
-    assignment.errorMessage = undefined;
-    await assignment.save();
-
-    await cacheDelete(CK.detail(id));
-    await cacheDelete(CK.list);
-    await enqueueOrProcess(id, configsToUse);
-
-    return res.json(assignment);
-  } catch {
-    return res.status(500).json({ error: 'Failed to trigger regeneration.' });
-  }
-});
-
-router.get('/:id/pdf', async (req: Request, res: Response) => {
-  try {
-    const assignment = await Assignment.findById(req.params.id);
-    if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
-    if (assignment.status !== 'completed') {
-      return res.status(400).json({ error: 'PDF is only available for completed assessments.' });
-    }
-    const requestedSet = req.query.set as string;
-    return generateAssignmentPDF(assignment, res, requestedSet);
-  } catch {
-    return res.status(500).json({ error: 'Failed to generate PDF.' });
-  }
-});
+router.get('/:id/pdf', wrap(async (req, res) => {
+  const assignment = await Assignment.findById(req.params.id);
+  if (!assignment) return res.status(404).json({ error: 'Assignment not found.' });
+  if (assignment.status !== 'completed') return res.status(400).json({ error: 'PDF only available for completed assessments.' });
+  return generateAssignmentPDF(assignment, res, req.query.set as string);
+}));
 
 export default router;
