@@ -84,7 +84,10 @@ interface AssignmentStore {
   setupSocketListener: (assignmentId: string) => void;
 }
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:5000';
+const API = process.env.NEXT_PUBLIC_BACKEND_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : 'https://vedaai-backend.vercel.app');
 let socket: Socket | null = null;
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
