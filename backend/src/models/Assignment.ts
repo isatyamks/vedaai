@@ -21,7 +21,7 @@ export interface IAssignment extends Document {
   dueDate: Date;
   additionalInstructions?: string;
   status: 'queued' | 'processing' | 'completed' | 'failed';
-  progress: number; // 0 to 100
+  progress: number;
   errorMessage?: string;
   sections: ISection[];
   createdAt: Date;
@@ -30,10 +30,10 @@ export interface IAssignment extends Document {
 
 const QuestionSchema = new Schema<IQuestion>({
   text: { type: String, required: true },
-  options: [{ type: String }],
-  correctAnswer: { type: String },
+  options: [String],
+  correctAnswer: String,
   difficulty: { type: String, enum: ['Easy', 'Moderate', 'Hard'], required: true },
-  marks: { type: Number, required: true },
+  marks: { type: Number, required: true, min: 1 },
 });
 
 const SectionSchema = new Schema<ISection>({
@@ -44,19 +44,18 @@ const SectionSchema = new Schema<ISection>({
 
 const AssignmentSchema = new Schema<IAssignment>(
   {
-    title: { type: String, required: true },
-    subject: { type: String, required: true },
-    grade: { type: String, required: true },
+    title: { type: String, required: true, trim: true },
+    subject: { type: String, required: true, trim: true },
+    grade: { type: String, required: true, trim: true },
     dueDate: { type: Date, required: true },
-    additionalInstructions: { type: String },
+    additionalInstructions: { type: String, default: '' },
     status: {
       type: String,
       enum: ['queued', 'processing', 'completed', 'failed'],
       default: 'queued',
-      required: true,
     },
-    progress: { type: Number, default: 0, required: true },
-    errorMessage: { type: String },
+    progress: { type: Number, default: 0, min: 0, max: 100 },
+    errorMessage: String,
     sections: [SectionSchema],
   },
   { timestamps: true }
