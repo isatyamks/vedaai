@@ -31,7 +31,9 @@ function validateSections(sections: any[]): string | null {
 }
 
 async function enqueueOrProcess(assignmentId: string, sectionConfigs: any[]): Promise<void> {
-  if (redisAvailable && assessmentQueue) {
+  if (process.env.VERCEL) {
+    await processGenerationJob(assignmentId, sectionConfigs);
+  } else if (redisAvailable && assessmentQueue) {
     await assessmentQueue.add('generate-questions', { assignmentId, sectionConfigs });
   } else {
     setImmediate(() => processGenerationJob(assignmentId, sectionConfigs));

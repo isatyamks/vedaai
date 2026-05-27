@@ -166,9 +166,9 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
         assignments: [assignment, ...state.assignments],
         activeJob: {
           assignmentId: assignment._id,
-          status: 'queued',
-          progress: 0,
-          message: 'Assignment queued for generation...',
+          status: assignment.status,
+          progress: assignment.progress,
+          message: assignment.status === 'completed' ? 'Test paper created successfully!' : 'Assignment queued for generation...',
         },
         showCreationForm: false,
       }));
@@ -206,9 +206,9 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
         assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
         activeJob: {
           assignmentId: id,
-          status: 'queued',
-          progress: 0,
-          message: 'Regeneration queued...',
+          status: updated.status,
+          progress: updated.progress,
+          message: updated.status === 'completed' ? 'Regeneration completed successfully!' : 'Regeneration queued...',
         },
       }));
 

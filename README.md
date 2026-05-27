@@ -221,3 +221,32 @@ To compile the frontend client with the exact public host IP/Domain so the clien
 NEXT_PUBLIC_BACKEND_URL="http://your_domain_or_server_ip" docker compose up --build -d
 ```
 This binds the client-side Next.js bundle queries perfectly to the reverse proxy endpoint, eliminating CORS overhead completely.
+
+---
+
+## Deploying on Vercel (Serverless Architecture)
+
+VedaAI is fully compatible with serverless cloud hosting platforms like **Vercel** for both the frontend and backend.
+
+### Serverless Adaptation Mechanics
+Because Vercel Serverless Functions are stateless and short-lived:
+1. **WebSockets & Background Workers (BullMQ)**: Sockets and persistent queue workers are not supported.
+2. **Synchronous Fallback**: When the backend detects it is running in Vercel (`process.env.VERCEL`), it automatically bypasses the BullMQ task queues and processes the AI test-paper generation **inline and synchronously** in the API thread.
+3. **Reactive UI State**: The Zustand state store reactively parses the synchronous serverless response, immediately transitioning the ProgressModal to a completed state without needing live WebSocket triggers.
+
+### Step 1: Deploy the Express Backend
+1. Go to the **Vercel Dashboard** and import your repository.
+2. Link a new project and set the **Root Directory** to `backend`.
+3. In **Environment Variables**, add:
+   - `MONGODB_URI`: Your MongoDB Atlas URI.
+   - `GEMINI_API_KEY`: Your Google Gemini API Key.
+   - `FRONTEND_URL`: Your Vercel frontend URL.
+4. Deploy the project. Vercel will automatically compile `src/server.ts` and serve all endpoints serverlessly.
+
+### Step 2: Deploy the Next.js Frontend
+1. Import your repository to a second Vercel project.
+2. Set the **Root Directory** to `frontend`.
+3. In **Environment Variables**, add:
+   - `NEXT_PUBLIC_BACKEND_URL`: Your Vercel backend URL (e.g. `https://vedaai-backend.vercel.app`).
+4. Deploy the project. Next.js App Router will compile and launch instantly.
+
