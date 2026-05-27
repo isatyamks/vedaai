@@ -42,6 +42,13 @@ export interface ISectionConfig {
   difficulty: 'Easy' | 'Moderate' | 'Hard';
 }
 
+export interface IActiveJob {
+  assignmentId: string;
+  status: IAssignment['status'];
+  progress: number;
+  message?: string;
+}
+
 export interface CreateAssignmentPayload {
   title: string;
   subject: string;
@@ -57,6 +64,7 @@ interface AssignmentStore {
   assignments: IAssignment[];
   activeAssignment: IAssignment | null;
   isLoading: boolean;
+  activeJob: IActiveJob | null;
   errorMessage: string | null;
   searchQuery: string;
   sortBy: 'newest' | 'oldest' | 'name';
@@ -71,6 +79,7 @@ interface AssignmentStore {
   regenerateAssignment: (id: string, customSections?: ISectionConfig[]) => Promise<void>;
   editAssignment: (id: string, userPrompt: string) => Promise<void>;
   selectAssignment: (assignment: IAssignment | null) => void;
+  clearActiveJob: () => void;
 }
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || 
@@ -84,6 +93,7 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   assignments: [],
   activeAssignment: null,
   isLoading: false,
+  activeJob: null,
   errorMessage: null,
   searchQuery: '',
   sortBy: 'newest',
@@ -101,6 +111,8 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
     if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
     set({ toast: null });
   },
+
+  clearActiveJob: () => set({ activeJob: null }),
 
   fetchAssignments: async () => {
     set({ isLoading: true, errorMessage: null });
@@ -133,13 +145,30 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   },
 
   createAssignment: async (payload) => {
-    set({ isLoading: true, errorMessage: null });
+    set({ 
+      isLoading: true, 
+      errorMessage: null,
+      activeJob: { assignmentId: 'temp', status: 'processing', progress: 0, message: 'Waking up the AI...' }
+    });
+    
+    const interval = setInterval(() => {
+      set(state => {
+        if (state.activeJob && state.activeJob.progress < 85) {
+          const nextProg = state.activeJob.progress + Math.floor(Math.random() * 20) + 5;
+          return { activeJob: { ...state.activeJob, progress: Math.min(nextProg, 85) } };
+        }
+        return state;
+      });
+    }, 600);
+
     try {
       const res = await fetch(`${API}/api/assignments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
+      clearInterval(interval);
 
       if (!res.ok) {
         const body = await res.json();
@@ -151,13 +180,15 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set((state) => ({
         assignments: [assignment, ...state.assignments.filter(a => a._id !== assignment._id)],
         activeAssignment: assignment,
+        activeJob: { assignmentId: assignment._id, status: 'completed', progress: 100, message: 'Assignment Ready!' }
       }));
 
       get().showToast('Test paper created successfully!', 'success');
       return assignment._id;
     } catch (err) {
+      clearInterval(interval);
       const msg = err instanceof Error ? err.message : 'Error creating assignment.';
-      set({ errorMessage: msg });
+      set({ errorMessage: msg, activeJob: { assignmentId: 'temp', status: 'failed', progress: 0, message: msg } });
       get().showToast(msg, 'error');
       return null;
     } finally {
@@ -166,13 +197,29 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   },
 
   regenerateAssignment: async (id, customSections) => {
-    set({ isLoading: true, errorMessage: null });
+    set({ 
+      isLoading: true, 
+      errorMessage: null,
+      activeJob: { assignmentId: id, status: 'processing', progress: 0, message: 'Regenerating content...' }
+    });
+
+    const interval = setInterval(() => {
+      set(state => {
+        if (state.activeJob && state.activeJob.progress < 85) {
+          return { activeJob: { ...state.activeJob, progress: state.activeJob.progress + 15 } };
+        }
+        return state;
+      });
+    }, 500);
+
     try {
       const res = await fetch(`${API}/api/assignments/${id}/regenerate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sections: customSections ?? [] }),
       });
+
+      clearInterval(interval);
 
       if (!res.ok) {
         const body = await res.json();
@@ -184,11 +231,13 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set((state) => ({
         activeAssignment: updated,
         assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
+        activeJob: { assignmentId: updated._id, status: 'completed', progress: 100, message: 'Regeneration Complete!' }
       }));
       get().showToast('Regeneration completed successfully!', 'success');
     } catch (err) {
+      clearInterval(interval);
       const msg = err instanceof Error ? err.message : 'Error during regeneration.';
-      set({ errorMessage: msg });
+      set({ errorMessage: msg, activeJob: { assignmentId: id, status: 'failed', progress: 0, message: msg } });
       get().showToast(msg, 'error');
     } finally {
       set({ isLoading: false });
@@ -196,13 +245,29 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   },
 
   editAssignment: async (id, userPrompt) => {
-    set({ isLoading: true, errorMessage: null });
+    set({ 
+      isLoading: true, 
+      errorMessage: null,
+      activeJob: { assignmentId: id, status: 'processing', progress: 0, message: 'Applying AI Edits...' }
+    });
+
+    const interval = setInterval(() => {
+      set(state => {
+        if (state.activeJob && state.activeJob.progress < 85) {
+          return { activeJob: { ...state.activeJob, progress: state.activeJob.progress + 15 } };
+        }
+        return state;
+      });
+    }, 500);
+
     try {
       const res = await fetch(`${API}/api/assignments/${id}/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: userPrompt }),
       });
+
+      clearInterval(interval);
 
       if (!res.ok) {
         const body = await res.json();
@@ -214,11 +279,13 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       set((state) => ({
         activeAssignment: updated,
         assignments: state.assignments.map((a) => (a._id === id ? updated : a)),
+        activeJob: { assignmentId: updated._id, status: 'completed', progress: 100, message: 'AI Edit Applied!' }
       }));
       get().showToast('AI Edit completed successfully!', 'success');
     } catch (err) {
+      clearInterval(interval);
       const msg = err instanceof Error ? err.message : 'Error during AI edit.';
-      set({ errorMessage: msg });
+      set({ errorMessage: msg, activeJob: { assignmentId: id, status: 'failed', progress: 0, message: msg } });
       get().showToast(msg, 'error');
     } finally {
       set({ isLoading: false });
