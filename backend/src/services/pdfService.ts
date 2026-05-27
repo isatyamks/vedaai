@@ -1,30 +1,23 @@
 import PDFDocument from 'pdfkit';
 import { Response } from 'express';
-import { IAssignment, ISection, IQuestion } from '../models/Assignment';
+import { IAssignment } from '../models/Assignment';
 
-// ── Palette ──────────────────────────────────────────────────────────────────
-const C = {
-  black:   '#000000',
-  ink:     '#1a1a1a',
-  dark:    '#1e293b',
-  mid:     '#475569',
-  muted:   '#64748b',
-  light:   '#94a3b8',
-  rule:    '#9ca3af',
+const PALETTE = {
+  ink: '#1a1a1a',
+  mid: '#475569',
+  muted: '#64748b',
+  light: '#94a3b8',
+  rule: '#9ca3af',
   ruleLight: '#d1d5db',
-  easyBg:  '#F0FDF4',
-  modBg:   '#FFFBEB',
-  hardBg:  '#FEF2F2',
-};
+  easyText: '#166534',
+  moderateText: '#92400e',
+  hardText: '#991b1b',
+} as const;
 
-// Page geometry
-const PAGE = { w: 595, h: 842, ml: 56, mr: 56, mt: 50, mb: 55 };
+const PAGE = { w: 595, h: 842, ml: 56, mr: 56, mt: 50, mb: 55 } as const;
 const CONTENT_W = PAGE.w - PAGE.ml - PAGE.mr;
 
-/**
- * Generates a polished, board-exam-style A4 PDF and pipes it to the Express response.
- */
-export const generateAssignmentPDF = (assignment: IAssignment, res: Response): void => {
+export function generateAssignmentPDF(assignment: IAssignment, res: Response): void {
   const doc = new PDFDocument({
     size: 'A4',
     margins: { top: PAGE.mt, bottom: PAGE.mb, left: PAGE.ml, right: PAGE.mr },
@@ -41,269 +34,161 @@ export const generateAssignmentPDF = (assignment: IAssignment, res: Response): v
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   doc.pipe(res);
 
-  // ── Totals ─────────────────────────────────────────────────────────────────
   let totalMarks = 0;
   let totalQuestions = 0;
-  assignment.sections.forEach(s => s.questions.forEach(q => { totalMarks += q.marks; totalQuestions++; }));
+  assignment.sections.forEach((s) =>
+    s.questions.forEach((q) => {
+      totalMarks += q.marks;
+      totalQuestions++;
+    })
+  );
 
-  // ── 1. School / Exam Header ────────────────────────────────────────────────
   doc
     .font('Helvetica-Bold')
     .fontSize(16)
-    .fillColor(C.ink)
-    .text('Delhi Public School, Sector-4, Bokaro', PAGE.ml, PAGE.mt, {
-      align: 'center', width: CONTENT_W,
-    });
+    .fillColor(PALETTE.ink)
+    .text('Delhi Public School, Sector-4, Bokaro', PAGE.ml, PAGE.mt, { align: 'center', width: CONTENT_W });
 
   doc.moveDown(0.25);
 
   doc
     .font('Helvetica')
     .fontSize(11)
-    .fillColor(C.mid)
-    .text(`Subject: ${assignment.subject}   |   Class: ${assignment.grade}`, {
-      align: 'center', width: CONTENT_W,
-    });
+    .fillColor(PALETTE.mid)
+    .text(`Subject: ${assignment.subject}   |   Class: ${assignment.grade}`, { align: 'center', width: CONTENT_W });
 
-  // Bold top rule
-  const ruleY1 = doc.y + 8;
-  rule(doc, ruleY1, 2, C.ink);
-  doc.y = ruleY1 + 6;
+  drawRule(doc, doc.y + 8, 2, PALETTE.ink);
+  doc.y += 14;
 
-  // Time / Marks row
   doc
     .font('Helvetica')
     .fontSize(10)
-    .fillColor(C.ink)
-    .text('Time Allowed: 45 minutes', PAGE.ml, doc.y)
-    .text(`Maximum Marks: ${totalMarks}`, PAGE.ml, doc.y - 13, { align: 'right', width: CONTENT_W });
+    .fillColor(PALETTE.ink)
+    .text('Time Allowed: 45 minutes', PAGE.ml, doc.y);
+
+  doc.text(`Maximum Marks: ${totalMarks}`, PAGE.ml, doc.y - 13, { align: 'right', width: CONTENT_W });
 
   doc.moveDown(0.4);
-
-  // Thin rule
-  rule(doc, doc.y, 0.75, C.rule);
+  drawRule(doc, doc.y, 0.75, PALETTE.rule);
   doc.moveDown(0.55);
 
-  // Instructions
-  const instrText = assignment.additionalInstructions
-    ? assignment.additionalInstructions.slice(0, 220)
-    : 'All questions are compulsory unless stated otherwise.';
-  doc
-    .font('Helvetica-Oblique')
-    .fontSize(9.5)
-    .fillColor(C.mid)
-    .text(instrText, { align: 'center', width: CONTENT_W });
+  const instrText = assignment.additionalInstructions?.slice(0, 220) || 'All questions are compulsory unless stated otherwise.';
+  doc.font('Helvetica-Oblique').fontSize(9.5).fillColor(PALETTE.mid).text(instrText, { align: 'center', width: CONTENT_W });
 
   doc.moveDown(0.8);
 
-  // ── 2. Student Info Fields ─────────────────────────────────────────────────
   const infoY = doc.y;
-  const infoH = 32;
-  doc.rect(PAGE.ml, infoY, CONTENT_W, infoH).strokeColor(C.ruleLight).lineWidth(0.8).stroke();
+  doc.rect(PAGE.ml, infoY, CONTENT_W, 32).strokeColor(PALETTE.ruleLight).lineWidth(0.8).stroke();
+  drawLabelField(doc, 'Name:', PAGE.ml + 8, infoY + 10, '______________________________', 55);
+  drawLabelField(doc, 'Roll No:', PAGE.ml + 270, infoY + 10, '__________', 50);
+  drawLabelField(doc, 'Class/Sec:', PAGE.ml + 390, infoY + 10, '______', 60);
+  doc.y = infoY + 32 + 14;
 
-  // Name
-  labelField(doc, 'Name:', PAGE.ml + 8, infoY + 10, '______________________________', 55);
-  // Roll No
-  labelField(doc, 'Roll No:', PAGE.ml + 270, infoY + 10, '__________', 50);
-  // Section
-  labelField(doc, 'Class/Sec:', PAGE.ml + 390, infoY + 10, '______', 60);
+  drawRule(doc, doc.y, 1.5, PALETTE.ink);
+  doc.y += 10;
 
-  doc.y = infoY + infoH + 14;
-
-  // Bold rule before sections
-  rule(doc, doc.y, 1.5, C.ink);
-  doc.y = doc.y + 10;
-
-  // ── 3. Question Sections ───────────────────────────────────────────────────
   let globalQNum = 0;
   const mcqAnswers: { num: number; answer: string }[] = [];
 
   assignment.sections.forEach((section, sIdx) => {
-    pageBreakIfNeeded(doc, 100);
+    ensureSpace(doc, 100);
 
-    const sectionLabel = String.fromCharCode(65 + sIdx);
-
-    // Section heading
     doc
       .font('Helvetica-Bold')
       .fontSize(11)
-      .fillColor(C.ink)
-      .text(`SECTION ${sectionLabel}`, PAGE.ml, doc.y, { underline: true });
+      .fillColor(PALETTE.ink)
+      .text(`SECTION ${String.fromCharCode(65 + sIdx)}`, PAGE.ml, doc.y, { underline: true });
 
     doc.moveDown(0.15);
-
-    doc
-      .font('Helvetica-Oblique')
-      .fontSize(9.5)
-      .fillColor(C.mid)
-      .text(section.instruction, PAGE.ml, doc.y, { width: CONTENT_W });
-
+    doc.font('Helvetica-Oblique').fontSize(9.5).fillColor(PALETTE.mid).text(section.instruction, PAGE.ml, doc.y, { width: CONTENT_W });
     doc.moveDown(0.75);
 
-    section.questions.forEach((question) => {
+    section.questions.forEach((q) => {
       globalQNum++;
-
-      pageBreakIfNeeded(doc, 60);
+      ensureSpace(doc, 60);
 
       const qY = doc.y;
-      const numColW = 22;
+      const numW = 22;
       const marksW = 48;
-      const bodyW = CONTENT_W - numColW - marksW;
+      const bodyW = CONTENT_W - numW - marksW;
 
-      // Question number
-      doc
-        .font('Helvetica-Bold')
-        .fontSize(10.5)
-        .fillColor(C.ink)
-        .text(`${globalQNum}.`, PAGE.ml, qY, { width: numColW });
-
-      // Marks (right-aligned)
-      doc
-        .font('Helvetica-Bold')
-        .fontSize(9.5)
-        .fillColor(C.mid)
-        .text(`[${question.marks} M]`, PAGE.ml + numColW + bodyW, qY, { width: marksW, align: 'right' });
-
-      // Question text
-      doc
-        .font('Helvetica')
-        .fontSize(10.5)
-        .fillColor(C.ink)
-        .text(question.text, PAGE.ml + numColW, qY, { width: bodyW, align: 'justify', lineGap: 1.5 });
+      doc.font('Helvetica-Bold').fontSize(10.5).fillColor(PALETTE.ink).text(`${globalQNum}.`, PAGE.ml, qY, { width: numW });
+      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.mid).text(`[${q.marks} M]`, PAGE.ml + numW + bodyW, qY, { width: marksW, align: 'right' });
+      doc.font('Helvetica').fontSize(10.5).fillColor(PALETTE.ink).text(q.text, PAGE.ml + numW, qY, { width: bodyW, align: 'justify', lineGap: 1.5 });
 
       doc.moveDown(0.3);
 
-      // MCQ Options — 2-column grid
-      if (question.options && question.options.length > 0) {
+      if (q.options && q.options.length > 0) {
         const baseY = doc.y;
         const colW = bodyW / 2;
-        question.options.forEach((opt, oIdx) => {
+        q.options.forEach((opt, oIdx) => {
           const col = oIdx % 2;
           const row = Math.floor(oIdx / 2);
-          const optX = PAGE.ml + numColW + col * colW;
+          const optX = PAGE.ml + numW + col * colW;
           const optY = baseY + row * 16;
-          const label = `(${String.fromCharCode(97 + oIdx)})`;
-
-          doc.font('Helvetica-Bold').fontSize(9.5).fillColor(C.mid).text(label, optX, optY);
-          doc.font('Helvetica').fontSize(9.5).fillColor(C.ink).text(opt, optX + 18, optY, { width: colW - 20 });
+          doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.mid).text(`(${String.fromCharCode(97 + oIdx)})`, optX, optY);
+          doc.font('Helvetica').fontSize(9.5).fillColor(PALETTE.ink).text(opt, optX + 18, optY, { width: colW - 20 });
         });
-        doc.y = baseY + Math.ceil(question.options.length / 2) * 16 + 4;
+        doc.y = baseY + Math.ceil(q.options.length / 2) * 16 + 4;
 
-        if (question.correctAnswer) {
-          mcqAnswers.push({ num: globalQNum, answer: question.correctAnswer });
-        }
+        if (q.correctAnswer) mcqAnswers.push({ num: globalQNum, answer: q.correctAnswer });
       }
 
-      // Difficulty tag — small italic bracket text
-      doc
-        .font('Helvetica-Oblique')
-        .fontSize(8.5)
-        .fillColor(
-          question.difficulty === 'Easy' ? '#166534' :
-          question.difficulty === 'Moderate' ? '#92400e' : '#991b1b'
-        )
-        .text(`[${question.difficulty}]`, PAGE.ml + numColW, doc.y + 2);
-
+      const diffColor = q.difficulty === 'Easy' ? PALETTE.easyText : q.difficulty === 'Moderate' ? PALETTE.moderateText : PALETTE.hardText;
+      doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(diffColor).text(`[${q.difficulty}]`, PAGE.ml + numW, doc.y + 2);
       doc.moveDown(1.1);
     });
 
     doc.moveDown(0.4);
   });
 
-  // ── 4. End of Paper ───────────────────────────────────────────────────────
-  pageBreakIfNeeded(doc, 40);
-  rule(doc, doc.y, 0.75, C.ruleLight);
+  ensureSpace(doc, 40);
+  drawRule(doc, doc.y, 0.75, PALETTE.ruleLight);
   doc.moveDown(0.5);
-  doc
-    .font('Helvetica-Oblique')
-    .fontSize(10)
-    .fillColor(C.muted)
-    .text('— End of Question Paper —', { align: 'center', width: CONTENT_W });
+  doc.font('Helvetica-Oblique').fontSize(10).fillColor(PALETTE.muted).text('— End of Question Paper —', { align: 'center', width: CONTENT_W });
 
-  // ── 5. Answer Key (MCQ) ────────────────────────────────────────────────────
   if (mcqAnswers.length > 0) {
-    pageBreakIfNeeded(doc, 80);
+    ensureSpace(doc, 80);
     doc.moveDown(1.2);
-    rule(doc, doc.y, 1.5, C.ink);
-    doc.y = doc.y + 10;
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(11)
-      .fillColor(C.ink)
-      .text('ANSWER KEY', PAGE.ml, doc.y, { underline: true });
-
+    drawRule(doc, doc.y, 1.5, PALETTE.ink);
+    doc.y += 10;
+    doc.font('Helvetica-Bold').fontSize(11).fillColor(PALETTE.ink).text('ANSWER KEY', PAGE.ml, doc.y, { underline: true });
     doc.moveDown(0.6);
 
     const colW = CONTENT_W / 4;
-    let col = 0;
-    let baseKeyY = doc.y;
+    const baseKeyY = doc.y;
 
     mcqAnswers.forEach((item, idx) => {
-      const x = PAGE.ml + col * colW;
+      const x = PAGE.ml + (idx % 4) * colW;
       const y = baseKeyY + Math.floor(idx / 4) * 18;
-
-      doc
-        .font('Helvetica-Bold').fontSize(9.5).fillColor(C.ink)
-        .text(`${item.num}.`, x, y)
-        .font('Helvetica').fillColor(C.mid)
-        .text(item.answer, x + 18, y, { width: colW - 20 });
-
-      col = (col + 1) % 4;
+      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.ink).text(`${item.num}.`, x, y);
+      doc.font('Helvetica').fillColor(PALETTE.mid).text(item.answer, x + 18, y, { width: colW - 20 });
     });
 
     doc.y = baseKeyY + Math.ceil(mcqAnswers.length / 4) * 18 + 12;
   }
 
-  // ── 6. Per-Page Headers & Footers ─────────────────────────────────────────
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
-
-    // Footer
     const footerY = PAGE.h - PAGE.mb + 6;
-    doc
-      .strokeColor(C.ruleLight).lineWidth(0.5)
-      .moveTo(PAGE.ml, footerY).lineTo(PAGE.w - PAGE.mr, footerY).stroke();
-
-    doc
-      .font('Helvetica').fontSize(7.5).fillColor(C.light)
-      .text('Generated by VedaAI Assessment Creator  |  For academic use only.', PAGE.ml, footerY + 5);
-
-    doc
-      .font('Helvetica').fontSize(7.5).fillColor(C.light)
-      .text(`Page ${i + 1} of ${range.count}`, PAGE.ml, footerY + 5, {
-        width: CONTENT_W, align: 'right',
-      });
+    doc.strokeColor(PALETTE.ruleLight).lineWidth(0.5).moveTo(PAGE.ml, footerY).lineTo(PAGE.w - PAGE.mr, footerY).stroke();
+    doc.font('Helvetica').fontSize(7.5).fillColor(PALETTE.light).text('Generated by VedaAI Assessment Creator  |  For academic use only.', PAGE.ml, footerY + 5);
+    doc.font('Helvetica').fontSize(7.5).fillColor(PALETTE.light).text(`Page ${i + 1} of ${range.count}`, PAGE.ml, footerY + 5, { width: CONTENT_W, align: 'right' });
   }
 
   doc.end();
-};
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function rule(doc: any, y: number, weight: number, color: string) {
-  doc
-    .strokeColor(color)
-    .lineWidth(weight)
-    .moveTo(PAGE.ml, y)
-    .lineTo(PAGE.w - PAGE.mr, y)
-    .stroke();
 }
 
-function labelField(doc: any, label: string, x: number, y: number, line: string, lineWidth: number) {
-  doc
-    .font('Helvetica-Bold').fontSize(9).fillColor(C.ink)
-    .text(label, x, y, { lineBreak: false });
-
-  doc
-    .font('Helvetica').fontSize(9).fillColor(C.mid)
-    .text(line, x + lineWidth, y, { lineBreak: false });
+function drawRule(doc: PDFKit.PDFDocument, y: number, weight: number, color: string): void {
+  doc.strokeColor(color).lineWidth(weight).moveTo(PAGE.ml, y).lineTo(PAGE.w - PAGE.mr, y).stroke();
 }
 
-function pageBreakIfNeeded(doc: any, minRemaining: number) {
-  const remaining = PAGE.h - PAGE.mb - doc.y;
-  if (remaining < minRemaining) {
-    doc.addPage();
-  }
+function drawLabelField(doc: PDFKit.PDFDocument, label: string, x: number, y: number, line: string, labelWidth: number): void {
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(PALETTE.ink).text(label, x, y, { lineBreak: false });
+  doc.font('Helvetica').fontSize(9).fillColor(PALETTE.mid).text(line, x + labelWidth, y, { lineBreak: false });
+}
+
+function ensureSpace(doc: PDFKit.PDFDocument, minRemaining: number): void {
+  if (PAGE.h - PAGE.mb - doc.y < minRemaining) doc.addPage();
 }
