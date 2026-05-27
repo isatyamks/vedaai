@@ -1,8 +1,5 @@
-.mainWrapper {
-  margin-left: 280px; /* Offset by sidebar */
-  padding-top: 70px;  /* Offset by header */
-  min-height: 100vh;
-  transition: all var(--transition-normal);
+.pageWrapper {
+  min-height: calc(100vh - var(--header-height));
 }
 
 .content {
@@ -10,7 +7,6 @@
   animation: fadeIn var(--transition-normal) forwards;
 }
 
-/* Dashboard List View */
 .dashboardHeader {
   display: flex;
   justify-content: space-between;
@@ -49,7 +45,6 @@
   box-shadow: 0 8px 16px rgba(255, 90, 54, 0.3);
 }
 
-/* Assignments Cards Grid */
 .cardsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -67,9 +62,11 @@
   flex-direction: column;
   gap: 16px;
   transition: all var(--transition-fast);
+  outline: none;
 }
 
-.assignmentCard:hover {
+.assignmentCard:hover,
+.assignmentCard:focus-visible {
   transform: translateY(-4px);
   border-color: var(--divider);
   box-shadow: var(--shadow-lg);
@@ -142,7 +139,18 @@
   justify-content: space-between;
 }
 
-/* EXACT Figma Empty State Layout */
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--secondary);
+}
+
+.marksItem {
+  font-weight: 700;
+  color: var(--brand-orange);
+}
+
 .emptyStateContainer {
   display: flex;
   flex-direction: column;
@@ -179,7 +187,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #1e293b; /* Figma uses exact solid dark buttons */
+  background-color: #1e293b;
   color: white;
   padding: 14px 28px;
   border-radius: var(--radius-md);
@@ -190,12 +198,11 @@
 }
 
 .emptyBtn:hover {
-  background-color: #0f172a;
+  background-color: var(--primary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-/* Full Page Loading skeleton pulse screen */
 .loaderContainer {
   display: flex;
   flex-direction: column;
@@ -214,14 +221,20 @@
   animation: spin 1s linear infinite;
 }
 
-/* Mobile responsive layout */
+.loaderText {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 550;
+}
+
 @media (max-width: 768px) {
-  .mainWrapper {
-    margin-left: 0;
-    padding-top: 60px;
-    padding-bottom: 60px; /* Offset bottom nav */
-  }
   .content {
     padding: 20px;
+  }
+
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 }

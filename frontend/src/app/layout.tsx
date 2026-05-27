@@ -6,31 +6,21 @@ import Header from '../components/Header';
 import ProgressModal from '../components/ProgressModal';
 
 export const metadata: Metadata = {
-  title: 'VedaAI Assessment Creator - Premium AI Classroom Suite',
-  description: 'Design dynamic, highly structured, multi-section classroom tests and exam papers with Google Gemini AI.',
+  title: 'VedaAI — AI-Powered Assessment Creator',
+  description:
+    'Design dynamic, multi-section exam papers with Google Gemini AI. Built for educators who demand precision.',
+  keywords: ['AI assessment', 'question paper generator', 'VedaAI', 'exam creator', 'Gemini AI'],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        {/* Core Sidebar component */}
         <Sidebar />
-
-        {/* Global Progress Modal for background generation tracking */}
         <ProgressModal />
-
-        {/* Outer app shell layout frame */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Sticky Header component */}
+        <div className="shell">
           <Header />
-
-          {/* Children layouts offset is handled inside pages */}
-          {children}
+          <main className="shell__content">{children}</main>
         </div>
       </body>
     </html>
