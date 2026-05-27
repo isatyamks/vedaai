@@ -1,9 +1,6 @@
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   z-index: 200;
@@ -29,7 +26,6 @@
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Circular Progress Loader */
 .progressRingContainer {
   position: relative;
   width: 120px;
@@ -60,12 +56,40 @@
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--primary);
 }
 
-/* Status logs */
+.successIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-easy-bg);
+  color: var(--color-easy-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slideUp 0.3s ease forwards;
+}
+
+.failedIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-hard-bg);
+  color: var(--color-hard-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .statusTitle {
   font-family: var(--font-display);
   font-size: 20px;
@@ -79,7 +103,6 @@
   min-height: 36px;
 }
 
-/* Queue State indicators checklist */
 .stepsList {
   width: 100%;
   border-top: 1px solid var(--border);
@@ -98,13 +121,13 @@
   color: var(--secondary);
 }
 
-.stepIcon {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
+.stepIconWrap {
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .stepCompleted {
@@ -113,18 +136,17 @@
 
 .stepActive {
   color: var(--brand-orange);
-  font-weight: 600;
-  animation: pulseGlow 1.5s infinite;
 }
 
 .stepPending {
   color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
 }
 
-/* Close action */
 .okButton {
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   background: var(--brand-gradient);
   color: white;
   border-radius: var(--radius-md);
@@ -132,7 +154,6 @@
   font-weight: 600;
   font-size: 14px;
   transition: all var(--transition-fast);
-  margin-top: 8px;
 }
 
 .okButton:hover {

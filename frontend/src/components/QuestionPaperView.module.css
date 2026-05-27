@@ -7,7 +7,6 @@
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* AI Greeting Banner */
 .aiBanner {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   border-radius: var(--radius-md);
@@ -21,7 +20,7 @@
 .aiMessage {
   font-size: 13.5px;
   color: #cbd5e1;
-  line-height: 1.55;
+  line-height: 1.6;
   font-style: italic;
   flex: 1;
 }
@@ -52,7 +51,6 @@
   transform: translateY(-1px);
 }
 
-/* Action bar (secondary row) */
 .actionsBar {
   display: flex;
   justify-content: flex-end;
@@ -76,8 +74,14 @@
   color: var(--brand-orange);
   border: 1px solid #ffd5c2;
 }
-.regenBtn:hover {
+
+.regenBtn:hover:not(:disabled) {
   background: #ffd5c2;
+}
+
+.regenBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .printBtn {
@@ -85,11 +89,11 @@
   color: var(--secondary);
   border: 1px solid var(--border);
 }
+
 .printBtn:hover {
   background: var(--border);
 }
 
-/* ── Printable Exam Sheet ── */
 .paper {
   background: #ffffff;
   border: 1px solid #d1d5db;
@@ -99,10 +103,9 @@
   font-size: 14px;
   color: #111;
   position: relative;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
-/* Watermark */
 .watermark {
   position: absolute;
   top: 50%;
@@ -115,9 +118,9 @@
   pointer-events: none;
   user-select: none;
   white-space: nowrap;
+  z-index: 0;
 }
 
-/* School Header */
 .schoolHeader {
   text-align: center;
   margin-bottom: 6px;
@@ -135,7 +138,6 @@
   color: #333;
 }
 
-/* Dividers */
 .boldRule {
   border: none;
   border-top: 2px solid #000;
@@ -148,7 +150,6 @@
   margin: 8px 0;
 }
 
-/* Time / Marks Row */
 .metaRow {
   display: flex;
   justify-content: space-between;
@@ -157,7 +158,6 @@
   color: #222;
 }
 
-/* General Instructions */
 .generalInstructions {
   font-size: 12.5px;
   font-style: italic;
@@ -166,7 +166,6 @@
   margin-bottom: 12px;
 }
 
-/* Student Info */
 .studentFields {
   display: flex;
   gap: 32px;
@@ -190,12 +189,17 @@
   color: #000;
   padding: 0 4px 1px;
   min-width: 140px;
+  outline: none;
 }
-.fieldLine:focus { outline: none; border-bottom-color: var(--brand-orange); }
 
-/* Section Blocks */
+.fieldLine:focus {
+  border-bottom-color: var(--brand-orange);
+}
+
 .sectionBlock {
   margin-top: 22px;
+  position: relative;
+  z-index: 1;
 }
 
 .sectionTitle {
@@ -207,13 +211,6 @@
   color: #000;
 }
 
-.sectionType {
-  font-size: 13.5px;
-  font-weight: 700;
-  margin-bottom: 2px;
-  color: #111;
-}
-
 .sectionInstruction {
   font-size: 12.5px;
   font-style: italic;
@@ -221,7 +218,6 @@
   margin-bottom: 12px;
 }
 
-/* Questions */
 .questionItem {
   display: flex;
   gap: 8px;
@@ -255,7 +251,6 @@
   flex-wrap: wrap;
 }
 
-/* Difficulty Badges — inline style matching Figma */
 .tag {
   font-size: 10.5px;
   font-weight: 700;
@@ -265,9 +260,9 @@
   text-transform: capitalize;
 }
 
-.tagEasy { background: #dcfce7; color: #166534; }
-.tagModerate { background: #fef9c3; color: #713f12; }
-.tagHard { background: #fee2e2; color: #991b1b; }
+.tagEasy { background: var(--color-easy-bg); color: var(--color-easy-text); }
+.tagModerate { background: var(--color-moderate-bg); color: var(--color-moderate-text); }
+.tagHard { background: var(--color-hard-bg); color: var(--color-hard-text); }
 
 .qMarks {
   font-size: 12px;
@@ -276,7 +271,6 @@
   margin-left: auto;
 }
 
-/* MCQ Options */
 .mcqGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -289,7 +283,6 @@
   color: #333;
 }
 
-/* End of Paper */
 .endLine {
   text-align: center;
   font-size: 13px;
@@ -300,7 +293,6 @@
   padding-top: 12px;
 }
 
-/* Answer Key */
 .answerKey {
   margin-top: 28px;
   border-top: 2px solid #000;
@@ -316,34 +308,56 @@
 }
 
 .answerList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px 12px;
 }
 
 .answerItem {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   font-size: 13px;
   color: #222;
-  line-height: 1.5;
 }
 
 .answerNum {
   font-weight: 700;
-  min-width: 22px;
+  min-width: 20px;
   flex-shrink: 0;
 }
 
-/* Print overrides */
 @media print {
-  .actionsBar, .aiBanner { display: none !important; }
-  .paper { border: none; box-shadow: none; padding: 0; }
+  .actionsBar,
+  .aiBanner {
+    display: none !important;
+  }
+
+  .paper {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
 }
 
 @media (max-width: 768px) {
-  .paper { padding: 28px 20px; }
-  .studentFields { flex-direction: column; gap: 12px; }
-  .mcqGrid { grid-template-columns: 1fr; }
-  .aiBanner { flex-direction: column; }
+  .paper {
+    padding: 28px 20px;
+  }
+
+  .studentFields {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mcqGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .aiBanner {
+    flex-direction: column;
+  }
+
+  .answerList {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

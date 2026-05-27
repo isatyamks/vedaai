@@ -1,9 +1,45 @@
 'use client';
 
-import React from 'react';
-import { Check, Loader, X, AlertTriangle } from 'lucide-react';
-import { useAssignmentStore } from '../store/assignmentStore';
+import React, { useMemo } from 'react';
+import { Check, Loader, AlertTriangle } from 'lucide-react';
+import { useAssignmentStore, IActiveJob } from '../store/assignmentStore';
 import styles from './ProgressModal.module.css';
+
+const STEPS: { label: string; threshold: number }[] = [
+  { label: 'Job queued in background worker', threshold: 0 },
+  { label: 'Optimizing prompt constraints', threshold: 15 },
+  { label: 'Querying Gemini AI structured output', threshold: 40 },
+  { label: 'Persisting exam paper to database', threshold: 70 },
+];
+
+function StepIcon({ isDone, isActive }: { isDone: boolean; isActive: boolean }) {
+  if (isDone) return <Check size={12} className={styles.stepCompleted} />;
+  if (isActive) return <Loader size={12} className={`${styles.stepActive} animate-spin`} />;
+  return <span className={styles.stepPending}>•</span>;
+}
+
+function ProgressRing({ progress }: { progress: number }) {
+  const r = 48;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className={styles.progressRingContainer}>
+      <svg className={styles.svgRing} width="120" height="120" aria-hidden="true">
+        <circle className={styles.ringBg} cx="60" cy="60" r={r} />
+        <circle
+          className={styles.ringBar}
+          cx="60"
+          cy="60"
+          r={r}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className={styles.progressText}>{progress}%</div>
+    </div>
+  );
+}
 
 export default function ProgressModal() {
   const { activeJob, clearActiveJob } = useAssignmentStore();
@@ -11,144 +47,53 @@ export default function ProgressModal() {
   if (!activeJob) return null;
 
   const { progress, status, message } = activeJob;
-
-  // SVG circle calculations
-  const r = 48;
-  const circumference = 2 * Math.PI * r;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-  // Check state of step checklist
-  const isStep1Done = progress >= 15;
-  const isStep2Done = progress >= 40;
-  const isStep3Done = progress >= 70;
-  const isStep4Done = progress >= 95;
-
-  const handleClose = () => {
-    clearActiveJob();
-  };
+  const isTerminal = status === 'completed' || status === 'failed';
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Assessment generation progress">
       <div className={styles.modal}>
-        {/* Circular Progress Ring */}
-        <div className={styles.progressRingContainer}>
-          <svg className={styles.svgRing} width="120" height="120">
-            <circle className={styles.ringBg} cx="60" cy="60" r={r} />
-            <circle
-              className={styles.ringBar}
-              cx="60"
-              cy="60"
-              r={r}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-            />
-          </svg>
-          <div className={styles.progressText}>
-            {status === 'failed' ? (
-              <AlertTriangle size={24} style={{ color: '#ef4444' }} />
-            ) : status === 'completed' ? (
-              <Check size={28} style={{ color: '#22c55e', strokeWidth: 3 }} />
-            ) : (
-              `${progress}%`
-            )}
+        {status === 'failed' ? (
+          <div className={styles.failedIcon}>
+            <AlertTriangle size={40} aria-hidden="true" />
           </div>
-        </div>
+        ) : status === 'completed' ? (
+          <div className={styles.successIcon}>
+            <Check size={40} strokeWidth={3} aria-hidden="true" />
+          </div>
+        ) : (
+          <ProgressRing progress={progress} />
+        )}
 
-        {/* Progress Title text */}
-        <div>
+        <div className={styles.statusText}>
           <h4 className={styles.statusTitle}>
             {status === 'failed'
-              ? 'AI Generation Failed'
+              ? 'Generation Failed'
               : status === 'completed'
-              ? 'Assessment Created!'
+              ? 'Assessment Ready!'
               : 'Creating Exam Paper...'}
           </h4>
-          <p className={styles.statusDesc}>
-            {status === 'failed' ? activeJob.message || 'Error occurred.' : message || 'Generating questions...'}
-          </p>
+          <p className={styles.statusDesc}>{message ?? 'Processing your request...'}</p>
         </div>
 
-        {/* Dynamic Queue log checklist */}
-        <div className={styles.stepsList}>
-          {/* Step 1 */}
-          <div className={styles.stepRow}>
-            <div
-              className={`${styles.stepIcon} ${
-                isStep1Done ? styles.stepCompleted : status === 'queued' ? styles.stepActive : styles.stepPending
-              }`}
-            >
-              {isStep1Done ? <Check size={12} /> : <Loader size={12} className="animate-spin" />}
-            </div>
-            <span style={{ fontWeight: status === 'queued' ? 600 : 400 }}>
-              Job queued in BullMQ background queue
-            </span>
-          </div>
-
-          {/* Step 2 */}
-          <div className={styles.stepRow}>
-            <div
-              className={`${styles.stepIcon} ${
-                isStep2Done ? styles.stepCompleted : progress >= 15 && progress < 40 ? styles.stepActive : styles.stepPending
-              }`}
-            >
-              {isStep2Done ? (
-                <Check size={12} />
-              ) : progress >= 15 && progress < 40 ? (
-                <Loader size={12} className="animate-spin" />
-              ) : (
-                '•'
-              )}
-            </div>
-            <span style={{ fontWeight: progress >= 15 && progress < 40 ? 600 : 400 }}>
-              AI prompting constraints optimization
-            </span>
-          </div>
-
-          {/* Step 3 */}
-          <div className={styles.stepRow}>
-            <div
-              className={`${styles.stepIcon} ${
-                isStep3Done ? styles.stepCompleted : progress >= 40 && progress < 70 ? styles.stepActive : styles.stepPending
-              }`}
-            >
-              {isStep3Done ? (
-                <Check size={12} />
-              ) : progress >= 40 && progress < 70 ? (
-                <Loader size={12} className="animate-spin" />
-              ) : (
-                '•'
-              )}
-            </div>
-            <span style={{ fontWeight: progress >= 40 && progress < 70 ? 600 : 400 }}>
-              Querying Gemini AI Structured Models
-            </span>
-          </div>
-
-          {/* Step 4 */}
-          <div className={styles.stepRow}>
-            <div
-              className={`${styles.stepIcon} ${
-                isStep4Done ? styles.stepCompleted : progress >= 70 && progress < 95 ? styles.stepActive : styles.stepPending
-              }`}
-            >
-              {isStep4Done ? (
-                <Check size={12} />
-              ) : progress >= 70 && progress < 95 ? (
-                <Loader size={12} className="animate-spin" />
-              ) : (
-                '•'
-              )}
-            </div>
-            <span style={{ fontWeight: progress >= 70 && progress < 95 ? 600 : 400 }}>
-              Writing structured exam paper to DB
-            </span>
-          </div>
+        <div className={styles.stepsList} aria-label="Progress steps">
+          {STEPS.map((step, i) => {
+            const isDone = progress > step.threshold;
+            const nextThreshold = STEPS[i + 1]?.threshold ?? 95;
+            const isActive = progress >= step.threshold && progress < nextThreshold && !isDone;
+            return (
+              <div key={step.label} className={styles.stepRow}>
+                <div className={styles.stepIconWrap}>
+                  <StepIcon isDone={isDone} isActive={isActive} />
+                </div>
+                <span style={{ fontWeight: isActive ? 600 : 400 }}>{step.label}</span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Finished Action Bar */}
-        {(status === 'completed' || status === 'failed') && (
-          <button className={styles.okButton} onClick={handleClose}>
-            {status === 'failed' ? 'Close & Retry' : 'View Generated Exam Paper'}
+        {isTerminal && (
+          <button className={styles.okButton} onClick={clearActiveJob}>
+            {status === 'failed' ? 'Close & Retry' : 'View Exam Paper'}
           </button>
         )}
       </div>
