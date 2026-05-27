@@ -1,14 +1,16 @@
 .sidebar {
   width: var(--sidebar-width);
-  height: 100vh;
+  height: calc(100vh - 32px);
   background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
   position: fixed;
-  left: 0;
-  top: 0;
+  left: 16px;
+  top: 16px;
+  bottom: 16px;
   z-index: 100;
   transition: transform var(--transition-normal);
 }
@@ -21,20 +23,12 @@
   padding: 0 8px;
 }
 
-.logoIcon {
+.logoImage {
   width: 36px;
   height: 36px;
-  background: var(--brand-gradient);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 20px;
-  box-shadow: 0 4px 10px rgba(255, 90, 54, 0.3);
+  object-fit: contain;
   flex-shrink: 0;
+  border-radius: 8px;
 }
 
 .logoText {
@@ -54,27 +48,28 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #1e293b;
+  background: linear-gradient(180deg, #27272a, #09090b);
   color: white;
-  padding: 14px;
-  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  border-radius: 99px;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   transition: all var(--transition-fast);
   margin-bottom: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid #3f3f46;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
   width: 100%;
 }
 
 .createBtn:hover {
-  background: var(--primary);
+  background: linear-gradient(180deg, #3f3f46, #18181b);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 .createBtnActive {
-  background: var(--primary);
+  background: linear-gradient(180deg, #3f3f46, #18181b);
 }
 
 .nav {
@@ -88,9 +83,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   color: var(--secondary);
-  border-radius: var(--radius-md);
+  border-radius: 99px;
   font-size: 14px;
   font-weight: 500;
   transition: all var(--transition-fast);
@@ -105,10 +100,6 @@
   background-color: var(--bg-hover);
   color: var(--primary);
   font-weight: 600;
-  border-left: 3px solid var(--brand-orange);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  padding-left: 11px;
 }
 
 .footer {
@@ -141,23 +132,21 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  background-color: var(--bg-hover);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  padding: 10px 12px;
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  border: none;
 }
 
 .schoolAvatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-  color: #15803d;
+  background: #5c8772;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
@@ -180,15 +169,15 @@
 .schoolName {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
 
 .schoolCity {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  color: #4b749f;
 }
 
 @media (max-width: 768px) {
@@ -231,10 +220,7 @@
   }
 
   .active {
-    border-left: none;
-    border-bottom: 3px solid var(--brand-orange);
-    border-radius: 0;
-    background: transparent;
-    padding-left: 8px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-sm);
   }
 }

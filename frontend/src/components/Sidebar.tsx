@@ -1,17 +1,18 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Users, FileText, BarChart3, Clock, Settings, Plus } from 'lucide-react';
+import { LayoutGrid, Users, FileText, BarChart3, Clock, Settings, Sparkles, School, Library } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { icon: LayoutGrid, label: 'Home', path: '/' },
+  { icon: LayoutGrid, label: 'Home', path: '/home' },
   { icon: Users, label: 'My Classes', path: '/groups' },
-  { icon: FileText, label: 'Assignments', path: '/library' },
+  { icon: FileText, label: 'Assignments', path: '/' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-  { icon: Clock, label: 'My Library', path: '/toolkit', badge: 32 },
+  { icon: Clock, label: 'My Library', path: '/library', badge: 32 },
 ] as const;
 
 export default function Sidebar() {
@@ -20,7 +21,7 @@ export default function Sidebar() {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logoArea}>
-        <div className={styles.logoIcon} aria-hidden="true">V</div>
+        <Image src="/logo.png" alt="VedaAI" width={36} height={36} className={styles.logoImage} priority />
         <div className={styles.logoText}>
           Veda<span>AI</span>
         </div>
@@ -29,11 +30,11 @@ export default function Sidebar() {
       <Link
         href="/create"
         className={`${styles.createBtn} ${pathname === '/create' ? styles.createBtnActive : ''}`}
-        aria-label="Create new test paper"
+        aria-label="Create new assignment"
         id="sidebar-create-btn"
       >
-        <Plus size={16} aria-hidden="true" />
-        <span>Create Test Paper</span>
+        <Sparkles size={16} strokeWidth={2.5} aria-hidden="true" />
+        <span>Create Assignment</span>
       </Link>
 
       <nav className={styles.nav} aria-label="Main navigation">
@@ -51,7 +52,7 @@ export default function Sidebar() {
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon size={20} aria-hidden="true" />
+              <Icon size={18} strokeWidth={2.25} aria-hidden="true" />
               <span>{label}</span>
               {badge !== undefined && (
                 <span className={styles.navBadge}>{badge}</span>
@@ -67,12 +68,14 @@ export default function Sidebar() {
           className={`${styles.settingsLink} ${pathname === '/settings' ? styles.active : ''}`}
           aria-label="Settings"
         >
-          <Settings size={20} aria-hidden="true" />
+          <Settings size={18} strokeWidth={2.25} aria-hidden="true" />
           <span>Settings</span>
         </Link>
 
         <div className={styles.schoolProfile}>
-          <div className={styles.schoolAvatar} aria-hidden="true">🏫</div>
+          <div className={styles.schoolAvatar} aria-hidden="true">
+            <School size={16} strokeWidth={2.5} />
+          </div>
           <div className={styles.schoolInfo}>
             <span className={styles.schoolName}>Delhi Public School</span>
             <span className={styles.schoolCity}>Bokaro Steel City</span>
