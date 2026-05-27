@@ -54,3 +54,10 @@ out/
 tmp/
 temp/
 *.tmp
+
+# ---- Private Keys & Certificates ----
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
