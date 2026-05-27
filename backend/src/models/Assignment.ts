@@ -14,6 +14,11 @@ export interface ISection {
   questions: IQuestion[];
 }
 
+export interface ISet {
+  setName: string;
+  sections: ISection[];
+}
+
 export interface IAssignment extends Document {
   title: string;
   subject: string;
@@ -24,6 +29,9 @@ export interface IAssignment extends Document {
   progress: number;
   errorMessage?: string;
   sections: ISection[];
+  sets: ISet[];
+  setCount: number;
+  chapters?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,8 +46,13 @@ const QuestionSchema = new Schema<IQuestion>({
 
 const SectionSchema = new Schema<ISection>({
   title: { type: String, required: true },
-  instruction: { type: String, required: true },
+  instruction: { type: String, default: 'Answer all questions in this section.' },
   questions: [QuestionSchema],
+});
+
+const SetSchema = new Schema<ISet>({
+  setName: { type: String, required: true },
+  sections: [SectionSchema],
 });
 
 const AssignmentSchema = new Schema<IAssignment>(
@@ -57,6 +70,9 @@ const AssignmentSchema = new Schema<IAssignment>(
     progress: { type: Number, default: 0, min: 0, max: 100 },
     errorMessage: String,
     sections: [SectionSchema],
+    sets: [SetSchema],
+    setCount: { type: Number, default: 1, min: 1, max: 4 },
+    chapters: [String],
   },
   { timestamps: true }
 );

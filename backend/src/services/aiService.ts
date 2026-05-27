@@ -14,20 +14,22 @@ export async function generateAssignmentContent(
   subject: string,
   grade: string,
   additionalInstructions: string,
-  sectionConfigs: ISectionConfig[]
+  sectionConfigs: ISectionConfig[],
+  setName: string = 'A',
+  chapters: string[] = []
 ): Promise<ISection[]> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
   if (apiKey) {
     try {
-      return await callGemini(title, subject, grade, additionalInstructions, sectionConfigs, apiKey);
+      return await callGemini(title, subject, grade, additionalInstructions, sectionConfigs, apiKey, setName, chapters);
     } catch {
-      return buildFallback(title, subject, sectionConfigs);
+      return buildFallback(title, subject, sectionConfigs, setName);
     }
   }
 
   await new Promise((r) => setTimeout(r, 3000));
-  return buildFallback(title, subject, sectionConfigs);
+  return buildFallback(title, subject, sectionConfigs, setName);
 }
 
 async function callGemini(
@@ -36,7 +38,9 @@ async function callGemini(
   grade: string,
   additionalInstructions: string,
   sectionConfigs: ISectionConfig[],
-  apiKey: string
+  apiKey: string,
+  setName: string,
+  chapters: string[]
 ): Promise<ISection[]> {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -47,11 +51,16 @@ async function callGemini(
     )
     .join('\n');
 
+  const chapterConstraint = chapters && chapters.length > 0
+    ? `\nSyllabus Chapters to Cover: ${chapters.join(', ')}\nEnsure all generated questions are strictly based on and cover these specific chapters.`
+    : '';
+
   const prompt = `You are an expert academic assessment creator. Generate a structured question paper.
+This is specifically for Set ${setName} of a multi-set exam. Make the questions distinct from other sets but identical in difficulty, sections, and marks structure to avoid cheating.
 
 Title: ${title}
 Subject: ${subject}
-Grade: ${grade}
+Grade: ${grade}${chapterConstraint}
 Instructions: ${additionalInstructions || 'None'}
 
 Sections:
@@ -95,7 +104,16 @@ Rules:
     throw new Error('Gemini response missing sections array.');
   }
 
-  return parsed.sections as ISection[];
+  const sections = parsed.sections as ISection[];
+  sections.forEach((sec: any) => {
+    if (!sec.instruction) {
+      const firstQ = sec.questions?.[0];
+      const type = firstQ?.options?.length ? 'MCQ' : (firstQ?.marks ?? 0) > 6 ? 'Long' : 'Short';
+      sec.instruction = SECTION_INSTRUCTIONS[type] || 'Answer all questions in this section.';
+    }
+  });
+
+  return sections;
 }
 
 type QuestionTemplate =
@@ -189,7 +207,8 @@ function selectDB(subject: string): SubjectDB {
 function buildFallback(
   title: string,
   subject: string,
-  sectionConfigs: ISectionConfig[]
+  sectionConfigs: ISectionConfig[],
+  setName: string = 'A'
 ): ISection[] {
   const db = selectDB(subject);
 
@@ -197,7 +216,8 @@ function buildFallback(
     const pool = db[cfg.type] ?? GENERIC_DB[cfg.type];
 
     const questions: IQuestion[] = Array.from({ length: cfg.count }, (_, i) => {
-      const template = pool[i % pool.length];
+      const setOffset = setName.charCodeAt(0) - 65;
+      const template = pool[(i + setOffset) % pool.length];
       const question: IQuestion = {
         text: `${template.text} [Topic: ${title}]`,
         difficulty: cfg.difficulty,
