@@ -26,8 +26,8 @@ export async function processGenerationJob(
     const assignment = await Assignment.findById(assignmentId);
     if (!assignment) throw new Error(`Assignment ${assignmentId} not found.`);
 
-    await updateProgress(assignmentId, 'processing', 40, 'Structuring prompts and analyzing section config...');
-    await updateProgress(assignmentId, 'processing', 70, 'Querying AI model for structured output...');
+    await updateProgress(assignmentId, 'processing', 40, 'Analyzing question structure and blueprint requirements...');
+    await updateProgress(assignmentId, 'processing', 70, 'Compiling structured sections and matching cognitive difficulty...');
 
     const sections = await generateAssignmentContent(
       assignment.title,

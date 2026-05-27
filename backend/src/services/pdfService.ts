@@ -2,193 +2,387 @@ import PDFDocument from 'pdfkit';
 import { Response } from 'express';
 import { IAssignment } from '../models/Assignment';
 
-const PALETTE = {
-  ink: '#1a1a1a',
-  mid: '#475569',
-  muted: '#64748b',
-  light: '#94a3b8',
-  rule: '#9ca3af',
-  ruleLight: '#d1d5db',
-  easyText: '#166534',
-  moderateText: '#92400e',
-  hardText: '#991b1b',
-} as const;
+const PAGE = {
+  width: 595.28,
+  height: 841.89,
+  marginLeft: 60,
+  marginRight: 60,
+  marginTop: 60,
+  marginBottom: 60,
+};
 
-const PAGE = { w: 595, h: 842, ml: 56, mr: 56, mt: 50, mb: 55 } as const;
-const CONTENT_W = PAGE.w - PAGE.ml - PAGE.mr;
+const CONTENT_WIDTH = PAGE.width - PAGE.marginLeft - PAGE.marginRight;
 
-export function generateAssignmentPDF(assignment: IAssignment, res: Response): void {
+export async function generateAssignmentPDF(
+  assignment: IAssignment,
+  res: Response,
+  requestedSet?: string
+): Promise<void> {
+
   const doc = new PDFDocument({
     size: 'A4',
-    margins: { top: PAGE.mt, bottom: PAGE.mb, left: PAGE.ml, right: PAGE.mr },
-    bufferPages: true,
-    info: {
-      Title: assignment.title,
-      Author: 'VedaAI Assessment Creator',
-      Subject: assignment.subject,
+    margins: {
+      top: PAGE.marginTop,
+      bottom: PAGE.marginBottom,
+      left: PAGE.marginLeft,
+      right: PAGE.marginRight,
     },
+    bufferPages: true,
+    autoFirstPage: true,
   });
 
-  const filename = `${assignment.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_exam.pdf`;
+  const SERIF = 'Times-Roman';
+  const SERIF_BOLD = 'Times-Bold';
+  const SERIF_ITALIC = 'Times-Italic';
+
+  const filename = `${assignment.title
+    .replace(/[^a-z0-9]/gi, '_')
+    .toLowerCase()}_paper.pdf`;
+
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   doc.pipe(res);
 
+  let sets = assignment.sets?.length
+    ? assignment.sets
+    : [{ setName: 'A', sections: assignment.sections }];
+
+  if (requestedSet) {
+    const filtered = sets.filter((s) => s.setName === requestedSet);
+    if (filtered.length > 0) sets = filtered;
+  }
+
+  const usedSections = sets[0]?.sections ?? assignment.sections;
   let totalMarks = 0;
-  let totalQuestions = 0;
-  assignment.sections.forEach((s) =>
-    s.questions.forEach((q) => {
-      totalMarks += q.marks;
-      totalQuestions++;
-    })
-  );
+  usedSections.forEach((sec) => sec.questions.forEach((q) => { totalMarks += q.marks; }));
 
-  doc
-    .font('Helvetica-Bold')
-    .fontSize(16)
-    .fillColor(PALETTE.ink)
-    .text('Delhi Public School, Sector-4, Bokaro', PAGE.ml, PAGE.mt, { align: 'center', width: CONTENT_W });
+  sets.forEach((set, setIndex) => {
+    if (setIndex > 0) doc.addPage();
 
-  doc.moveDown(0.25);
-
-  doc
-    .font('Helvetica')
-    .fontSize(11)
-    .fillColor(PALETTE.mid)
-    .text(`Subject: ${assignment.subject}   |   Class: ${assignment.grade}`, { align: 'center', width: CONTENT_W });
-
-  drawRule(doc, doc.y + 8, 2, PALETTE.ink);
-  doc.y += 14;
-
-  doc
-    .font('Helvetica')
-    .fontSize(10)
-    .fillColor(PALETTE.ink)
-    .text('Time Allowed: 45 minutes', PAGE.ml, doc.y);
-
-  doc.text(`Maximum Marks: ${totalMarks}`, PAGE.ml, doc.y - 13, { align: 'right', width: CONTENT_W });
-
-  doc.moveDown(0.4);
-  drawRule(doc, doc.y, 0.75, PALETTE.rule);
-  doc.moveDown(0.55);
-
-  const instrText = assignment.additionalInstructions?.slice(0, 220) || 'All questions are compulsory unless stated otherwise.';
-  doc.font('Helvetica-Oblique').fontSize(9.5).fillColor(PALETTE.mid).text(instrText, { align: 'center', width: CONTENT_W });
-
-  doc.moveDown(0.8);
-
-  const infoY = doc.y;
-  doc.rect(PAGE.ml, infoY, CONTENT_W, 32).strokeColor(PALETTE.ruleLight).lineWidth(0.8).stroke();
-  drawLabelField(doc, 'Name:', PAGE.ml + 8, infoY + 10, '______________________________', 55);
-  drawLabelField(doc, 'Roll No:', PAGE.ml + 270, infoY + 10, '__________', 50);
-  drawLabelField(doc, 'Class/Sec:', PAGE.ml + 390, infoY + 10, '______', 60);
-  doc.y = infoY + 32 + 14;
-
-  drawRule(doc, doc.y, 1.5, PALETTE.ink);
-  doc.y += 10;
-
-  let globalQNum = 0;
-  const mcqAnswers: { num: number; answer: string }[] = [];
-
-  assignment.sections.forEach((section, sIdx) => {
-    ensureSpace(doc, 100);
+    let y = PAGE.marginTop;
 
     doc
-      .font('Helvetica-Bold')
+      .font(SERIF_BOLD)
+      .fontSize(16)
+      .fillColor('#000000')
+      .text('Delhi Public School, Sector-4, Bokaro', PAGE.marginLeft, y, {
+        width: CONTENT_WIDTH,
+        align: 'center',
+      });
+
+    y = doc.y + 2;
+
+    const subjectLine = `Subject: ${assignment.subject}  |  Class: ${assignment.grade}${sets.length > 1 ? `  |  SET ${set.setName}` : ''}`;
+    doc
+      .font(SERIF)
       .fontSize(11)
-      .fillColor(PALETTE.ink)
-      .text(`SECTION ${String.fromCharCode(65 + sIdx)}`, PAGE.ml, doc.y, { underline: true });
+      .fillColor('#333333')
+      .text(subjectLine, PAGE.marginLeft, y, {
+        width: CONTENT_WIDTH,
+        align: 'center',
+      });
 
-    doc.moveDown(0.15);
-    doc.font('Helvetica-Oblique').fontSize(9.5).fillColor(PALETTE.mid).text(section.instruction, PAGE.ml, doc.y, { width: CONTENT_W });
-    doc.moveDown(0.75);
+    y = doc.y + 6;
 
-    section.questions.forEach((q) => {
-      globalQNum++;
-      ensureSpace(doc, 60);
+    doc
+      .moveTo(PAGE.marginLeft, y)
+      .lineTo(PAGE.width - PAGE.marginRight, y)
+      .lineWidth(2)
+      .strokeColor('#000000')
+      .stroke();
 
-      const qY = doc.y;
-      const numW = 22;
-      const marksW = 48;
-      const bodyW = CONTENT_W - numW - marksW;
+    y += 8;
 
-      doc.font('Helvetica-Bold').fontSize(10.5).fillColor(PALETTE.ink).text(`${globalQNum}.`, PAGE.ml, qY, { width: numW });
-      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.mid).text(`[${q.marks} M]`, PAGE.ml + numW + bodyW, qY, { width: marksW, align: 'right' });
-      doc.font('Helvetica').fontSize(10.5).fillColor(PALETTE.ink).text(q.text, PAGE.ml + numW, qY, { width: bodyW, align: 'justify', lineGap: 1.5 });
+    doc
+      .font(SERIF)
+      .fontSize(11)
+      .fillColor('#222222')
+      .text('Time Allowed: 45 minutes', PAGE.marginLeft, y, {
+        width: Math.floor(CONTENT_WIDTH / 2),
+        align: 'left',
+      });
 
-      doc.moveDown(0.3);
+    doc
+      .font(SERIF)
+      .fontSize(11)
+      .fillColor('#222222')
+      .text(`Maximum Marks: ${totalMarks}`, PAGE.marginLeft + Math.ceil(CONTENT_WIDTH / 2), y, {
+        width: Math.floor(CONTENT_WIDTH / 2),
+        align: 'right',
+      });
 
-      if (q.options && q.options.length > 0) {
-        const baseY = doc.y;
-        const colW = bodyW / 2;
-        q.options.forEach((opt, oIdx) => {
-          const col = oIdx % 2;
-          const row = Math.floor(oIdx / 2);
-          const optX = PAGE.ml + numW + col * colW;
-          const optY = baseY + row * 16;
-          doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.mid).text(`(${String.fromCharCode(97 + oIdx)})`, optX, optY);
-          doc.font('Helvetica').fontSize(9.5).fillColor(PALETTE.ink).text(opt, optX + 18, optY, { width: colW - 20 });
+    y = doc.y + 5;
+
+    doc
+      .moveTo(PAGE.marginLeft, y)
+      .lineTo(PAGE.width - PAGE.marginRight, y)
+      .lineWidth(0.75)
+      .strokeColor('#555555')
+      .stroke();
+
+    y += 8;
+
+    const instructions = assignment.additionalInstructions || 'All questions are compulsory unless stated otherwise.';
+    doc
+      .font(SERIF_ITALIC)
+      .fontSize(10.5)
+      .fillColor('#444444')
+      .text(instructions, PAGE.marginLeft, y, {
+        width: CONTENT_WIDTH,
+        align: 'center',
+        lineGap: 2,
+      });
+
+    y = doc.y + 10;
+
+    const nameColW = 200;
+    const rollColW = 150;
+    const classColW = CONTENT_WIDTH - nameColW - rollColW;
+
+    doc
+      .font(SERIF_BOLD)
+      .fontSize(10.5)
+      .fillColor('#000000')
+      .text('Name: ____________________________', PAGE.marginLeft, y, {
+        width: nameColW,
+        lineBreak: false,
+      });
+
+    doc
+      .font(SERIF_BOLD)
+      .fontSize(10.5)
+      .fillColor('#000000')
+      .text('Roll No: __________', PAGE.marginLeft + nameColW, y, {
+        width: rollColW,
+        lineBreak: false,
+      });
+
+    doc
+      .font(SERIF_BOLD)
+      .fontSize(10.5)
+      .fillColor('#000000')
+      .text('Class/Sec: ______', PAGE.marginLeft + nameColW + rollColW, y, {
+        width: classColW,
+        lineBreak: false,
+      });
+
+    y = doc.y + 8;
+
+    doc
+      .moveTo(PAGE.marginLeft, y)
+      .lineTo(PAGE.width - PAGE.marginRight, y)
+      .lineWidth(2)
+      .strokeColor('#000000')
+      .stroke();
+
+    y += 14;
+    doc.y = y;
+
+    let questionNumber = 1;
+
+    set.sections.forEach((section, sIdx) => {
+      const sectionLabel = String.fromCharCode(65 + sIdx);
+
+      checkPageBreak(doc, 60);
+
+      doc
+        .font(SERIF_BOLD)
+        .fontSize(12)
+        .fillColor('#000000')
+        .text(`Section ${sectionLabel}`, PAGE.marginLeft, doc.y, {
+          width: CONTENT_WIDTH,
+          align: 'left',
+          underline: true,
         });
-        doc.y = baseY + Math.ceil(q.options.length / 2) * 16 + 4;
 
-        if (q.correctAnswer) mcqAnswers.push({ num: globalQNum, answer: q.correctAnswer });
+      doc.moveDown(0.25);
+
+      if (section.instruction) {
+        doc
+          .font(SERIF_ITALIC)
+          .fontSize(10.5)
+          .fillColor('#555555')
+          .text(section.instruction, PAGE.marginLeft, doc.y, {
+            width: CONTENT_WIDTH,
+            align: 'left',
+            lineGap: 2,
+          });
+
+        doc.moveDown(0.5);
       }
 
-      const diffColor = q.difficulty === 'Easy' ? PALETTE.easyText : q.difficulty === 'Moderate' ? PALETTE.moderateText : PALETTE.hardText;
-      doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(diffColor).text(`[${q.difficulty}]`, PAGE.ml + numW, doc.y + 2);
-      doc.moveDown(1.1);
+      section.questions.forEach((q) => {
+        const marksLabel = `[${q.marks} Mark${q.marks !== 1 ? 's' : ''}]`;
+
+        const numColW = 22;
+        const marksColW = 60;
+        const textColW = CONTENT_WIDTH - numColW - marksColW - 8;
+
+        const qTextHeight = doc.heightOfString(q.text, {
+          width: textColW,
+          lineGap: 4,
+        });
+
+        let optsHeight = 0;
+        if (q.options?.length) {
+          const preColW = Math.floor((textColW - 16) / 2);
+          const preRowCount = Math.ceil(q.options.length / 2);
+          for (let row = 0; row < preRowCount; row++) {
+            let maxH = 0;
+            for (let col = 0; col < 2; col++) {
+              const oIdx = row * 2 + col;
+              if (oIdx >= q.options.length) break;
+              const label = `(${String.fromCharCode(97 + oIdx)}) ${q.options[oIdx]}`;
+              const h = doc.heightOfString(label, { width: preColW, lineGap: 2 });
+              if (h > maxH) maxH = h;
+            }
+            optsHeight += maxH + 8;
+          }
+          optsHeight += 10;
+        }
+
+        const totalH = qTextHeight + optsHeight + 32;
+        checkPageBreak(doc, totalH);
+
+        const startY = doc.y;
+
+        doc
+          .font(SERIF_BOLD)
+          .fontSize(11)
+          .fillColor('#000000')
+          .text(`${questionNumber}.`, PAGE.marginLeft, startY, {
+            width: numColW,
+            lineBreak: false,
+          });
+
+        doc
+          .font(SERIF)
+          .fontSize(11)
+          .fillColor('#111111')
+          .text(q.text, PAGE.marginLeft + numColW, startY, {
+            width: textColW,
+            align: 'left',
+            lineGap: 4,
+          });
+
+        doc
+          .font(SERIF_ITALIC)
+          .fontSize(10)
+          .fillColor('#555555')
+          .text(marksLabel, PAGE.marginLeft + numColW + textColW + 8, startY, {
+            width: marksColW,
+            align: 'right',
+            lineBreak: false,
+          });
+
+        doc.y = startY + qTextHeight + 8;
+
+        if (q.options?.length) {
+          const optStartX = PAGE.marginLeft + numColW;
+          const colW = Math.floor((textColW - 16) / 2);
+          const optCount = q.options.length;
+          const rowCount = Math.ceil(optCount / 2);
+
+          const rowHeights: number[] = [];
+          for (let row = 0; row < rowCount; row++) {
+            let maxH = 0;
+            for (let col = 0; col < 2; col++) {
+              const oIdx = row * 2 + col;
+              if (oIdx >= optCount) break;
+              const label = `(${String.fromCharCode(97 + oIdx)}) ${q.options![oIdx]}`;
+              const h = doc.heightOfString(label, { width: colW, lineGap: 2 });
+              if (h > maxH) maxH = h;
+            }
+            rowHeights.push(maxH + 8);
+          }
+
+          const totalOptH = rowHeights.reduce((a, b) => a + b, 0) + 6;
+          checkPageBreak(doc, totalOptH);
+
+          for (let row = 0; row < rowCount; row++) {
+            const rowY = doc.y;
+
+            for (let col = 0; col < 2; col++) {
+              const oIdx = row * 2 + col;
+              if (oIdx >= optCount) break;
+
+              const ox = optStartX + col * (colW + 16);
+              const optLabel = `(${String.fromCharCode(97 + oIdx)}) ${q.options![oIdx]}`;
+
+              doc
+                .font(SERIF)
+                .fontSize(10.5)
+                .fillColor('#333333')
+                .text(optLabel, ox, rowY, {
+                  width: colW,
+                  lineGap: 2,
+                });
+            }
+
+            doc.y = rowY + rowHeights[row];
+          }
+
+          doc.moveDown(0.2);
+        }
+
+        doc.moveDown(0.6);
+        questionNumber++;
+      });
+
+      doc.moveDown(0.8);
     });
 
-    doc.moveDown(0.4);
+    checkPageBreak(doc, 30);
+    doc.moveDown(0.5);
+
+    doc
+      .moveTo(PAGE.marginLeft, doc.y)
+      .lineTo(PAGE.width - PAGE.marginRight, doc.y)
+      .lineWidth(0.5)
+      .strokeColor('#cccccc')
+      .stroke();
+
+    doc.moveDown(0.5);
+
+    doc
+      .font(SERIF_ITALIC)
+      .fontSize(11)
+      .fillColor('#666666')
+      .text('— End of Question Paper —', PAGE.marginLeft, doc.y, {
+        width: CONTENT_WIDTH,
+        align: 'center',
+      });
   });
-
-  ensureSpace(doc, 40);
-  drawRule(doc, doc.y, 0.75, PALETTE.ruleLight);
-  doc.moveDown(0.5);
-  doc.font('Helvetica-Oblique').fontSize(10).fillColor(PALETTE.muted).text('— End of Question Paper —', { align: 'center', width: CONTENT_W });
-
-  if (mcqAnswers.length > 0) {
-    ensureSpace(doc, 80);
-    doc.moveDown(1.2);
-    drawRule(doc, doc.y, 1.5, PALETTE.ink);
-    doc.y += 10;
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(PALETTE.ink).text('ANSWER KEY', PAGE.ml, doc.y, { underline: true });
-    doc.moveDown(0.6);
-
-    const colW = CONTENT_W / 4;
-    const baseKeyY = doc.y;
-
-    mcqAnswers.forEach((item, idx) => {
-      const x = PAGE.ml + (idx % 4) * colW;
-      const y = baseKeyY + Math.floor(idx / 4) * 18;
-      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PALETTE.ink).text(`${item.num}.`, x, y);
-      doc.font('Helvetica').fillColor(PALETTE.mid).text(item.answer, x + 18, y, { width: colW - 20 });
-    });
-
-    doc.y = baseKeyY + Math.ceil(mcqAnswers.length / 4) * 18 + 12;
-  }
 
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
-    const footerY = PAGE.h - PAGE.mb + 6;
-    doc.strokeColor(PALETTE.ruleLight).lineWidth(0.5).moveTo(PAGE.ml, footerY).lineTo(PAGE.w - PAGE.mr, footerY).stroke();
-    doc.font('Helvetica').fontSize(7.5).fillColor(PALETTE.light).text('Generated by VedaAI Assessment Creator  |  For academic use only.', PAGE.ml, footerY + 5);
-    doc.font('Helvetica').fontSize(7.5).fillColor(PALETTE.light).text(`Page ${i + 1} of ${range.count}`, PAGE.ml, footerY + 5, { width: CONTENT_W, align: 'right' });
+
+    const savedMargins = { ...(doc.page as any).margins };
+    (doc.page as any).margins.bottom = 0;
+
+    doc
+      .font(SERIF)
+      .fontSize(9)
+      .fillColor('#999999')
+      .text(
+        `Page ${i - range.start + 1} of ${range.count}`,
+        PAGE.marginLeft,
+        PAGE.height - 42,
+        { width: CONTENT_WIDTH, align: 'center' }
+      );
+
+    (doc.page as any).margins = savedMargins;
   }
 
   doc.end();
 }
 
-function drawRule(doc: PDFKit.PDFDocument, y: number, weight: number, color: string): void {
-  doc.strokeColor(color).lineWidth(weight).moveTo(PAGE.ml, y).lineTo(PAGE.w - PAGE.mr, y).stroke();
-}
-
-function drawLabelField(doc: PDFKit.PDFDocument, label: string, x: number, y: number, line: string, labelWidth: number): void {
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(PALETTE.ink).text(label, x, y, { lineBreak: false });
-  doc.font('Helvetica').fontSize(9).fillColor(PALETTE.mid).text(line, x + labelWidth, y, { lineBreak: false });
-}
-
-function ensureSpace(doc: PDFKit.PDFDocument, minRemaining: number): void {
-  if (PAGE.h - PAGE.mb - doc.y < minRemaining) doc.addPage();
+function checkPageBreak(doc: PDFKit.PDFDocument, neededHeight: number): void {
+  const usableBottom = PAGE.height - PAGE.marginBottom;
+  if (doc.y + neededHeight > usableBottom) {
+    if (doc.y > PAGE.marginTop + 30) {
+      doc.addPage();
+    }
+  }
 }
