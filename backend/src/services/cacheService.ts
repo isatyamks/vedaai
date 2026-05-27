@@ -35,12 +35,6 @@ class MemoryCache {
     this.store.delete(key);
   }
 
-  deleteByPrefix(prefix: string): void {
-    for (const key of this.store.keys()) {
-      if (key.startsWith(prefix)) this.store.delete(key);
-    }
-  }
-
   size(): number {
     return this.store.size;
   }
@@ -89,17 +83,6 @@ export async function cacheDelete(key: string): Promise<void> {
   if (redisAvailable && redisConnection) {
     try {
       await redisConnection.del(key);
-    } catch {}
-  }
-}
-
-export async function cacheDeletePrefix(prefix: string): Promise<void> {
-  mem.deleteByPrefix(prefix);
-
-  if (redisAvailable && redisConnection) {
-    try {
-      const keys = await redisConnection.keys(`${prefix}*`);
-      if (keys.length > 0) await redisConnection.del(...keys);
     } catch {}
   }
 }
