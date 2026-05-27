@@ -86,20 +86,15 @@ vedaai/
 │   │   ├── services/         # PDFKit Engine, Gemini AI Gateway, Sockets
 │   │   ├── workers/          # BullMQ generation task processor
 │   │   └── server.ts         # App entrypoint
-│   ├── Dockerfile
 │   └── package.json
 │
-├── frontend/                 # Next.js Application
-│   ├── src/
-│   │   ├── app/              # App router & pages (dashboard, editor)
-│   │   ├── components/       # Steppers, Preview modals, Print views
-│   │   ├── store/            # Zustand global stores (socket & state handlers)
-│   │   └── types/            # TypeScript interfaces
-│   ├── Dockerfile
-│   └── package.json
-│
-├── docker-compose.yml        # Orchestrates Redis, MongoDB, Backend & Frontend
-└── Makefile                  # Short-cuts for system commands
+└── frontend/                 # Next.js Application
+    ├── src/
+    │   ├── app/              # App router & pages (dashboard, editor)
+    │   ├── components/       # Steppers, Preview modals, Print views
+    │   ├── store/            # Zustand global stores (socket & state handlers)
+    │   └── types/            # TypeScript interfaces
+    └── package.json
 ```
 
 ---
@@ -126,37 +121,16 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 
 ## Installation & Running Locally
 
-Ensure you have **Node.js 20+**, **Docker**, and **Docker Compose** installed.
+Ensure you have **Node.js 20+**, **MongoDB**, and **Redis** active on their default ports.
 
-### Option A: Using Docker Compose (Recommended)
-This fires up Redis, the Node backend, the background worker queue, and the Next.js frontend instantly:
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/isatyamks/vedaai.git
-cd vedaai
-
-# 2. Spin up all containers
-docker compose up --build -d
-```
-The application will be accessible at:
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:5000/health`
-
-### Option B: Bare-Metal Setup (Development Mode)
-If you prefer running services directly:
-
-#### 1. Pre-requisites
-Ensure local instances of **MongoDB** and **Redis Server** are active on default ports.
-
-#### 2. Start the Backend & Worker
+### 1. Start the Backend & Worker
 ```bash
 cd backend
 npm install
 npm run dev
 ```
 
-#### 3. Start the Frontend
+### 2. Start the Frontend
 ```bash
 cd frontend
 npm install
