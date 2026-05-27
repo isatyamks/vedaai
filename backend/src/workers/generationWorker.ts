@@ -61,7 +61,7 @@ export function initWorker(): void {
       const { assignmentId, sectionConfigs } = job.data;
       await processGenerationJob(assignmentId, sectionConfigs);
     },
-    { connection: redisConnection }
+    { connection: redisConnection as any }
   );
 
   worker.on('failed', (job, err) => {

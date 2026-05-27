@@ -1,15 +1,15 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db';
 import { initQueue, redisConnection } from './config/queue';
 import { initSocket } from './services/socketService';
 import { initWorker } from './workers/generationWorker';
 import assignmentRoutes from './routes/assignmentRoutes';
-
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);

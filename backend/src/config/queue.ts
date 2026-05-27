@@ -23,7 +23,7 @@ export async function initQueue(): Promise<void> {
     redisAvailable = true;
 
     assessmentQueue = new Queue('assessment-generation', {
-      connection: conn,
+      connection: conn as any,
       defaultJobOptions: {
         attempts: 3,
         backoff: { type: 'exponential', delay: 2000 },
