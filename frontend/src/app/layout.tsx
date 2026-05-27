@@ -8,13 +8,31 @@ import ToastContainer from '../components/ToastContainer';
 
 export const metadata: Metadata = {
   title: 'Veda AI — School Test & Exam Maker',
-  description: 'Create structured test papers and school exam sheets for modern classrooms.',
+  description: 'Create structured assignments and school exam sheets for modern classrooms.',
   keywords: ['assessment platform', 'question paper generator', 'Veda AI', 'exam creator', 'educational software'],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
       <body>
         <Sidebar />
         <ProgressModal />
