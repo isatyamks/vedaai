@@ -1,27 +1,26 @@
 .header {
   height: var(--header-height);
-  background-color: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
+  padding: 0 16px;
   position: fixed;
-  top: 0;
-  right: 0;
-  left: var(--sidebar-width);
+  top: 16px;
+  right: 16px;
+  width: calc(100% - var(--sidebar-width) - 48px);
   z-index: 90;
-  transition: left var(--transition-normal);
+  border-radius: 99px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--secondary);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 15px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 13px;
   transition: color var(--transition-fast);
   background: none;
   border: none;
@@ -38,11 +37,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   background-color: var(--bg-hover);
-  color: var(--primary);
+  color: var(--secondary);
   flex-shrink: 0;
 }
 

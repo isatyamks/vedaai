@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Bell, ChevronDown } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Bell, ChevronDown } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAssignmentStore } from '../store/assignmentStore';
 import styles from './Header.module.css';
@@ -17,9 +17,11 @@ export default function Header() {
     }
   };
 
-  let breadcrumb = 'Test Papers';
-  if (pathname === '/create') {
-    breadcrumb = 'Create Test Paper';
+  let breadcrumb = 'Assignments';
+  if (pathname === '/') {
+    breadcrumb = 'Assignments';
+  } else if (pathname === '/create') {
+    breadcrumb = 'Create Assignment';
   } else if (pathname.startsWith('/assignment/') && activeAssignment) {
     breadcrumb = activeAssignment.title;
   } else if (pathname === '/groups') {
