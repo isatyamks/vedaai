@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, Plus, X, Calendar, FileText, AlertCircle, Mic, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Upload, Plus, X, Calendar, FileText, AlertCircle, Mic, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useAssignmentStore, ISectionConfig } from '../store/assignmentStore';
 import styles from './AssignmentForm.module.css';
 
@@ -178,7 +178,7 @@ export default function AssignmentForm() {
 
     const hasErrors = Object.keys(errs).length > 0;
     if (hasErrors) {
-      showToast('Please select all required fields to create the test paper.', 'error');
+      showToast('Please select all required fields to create the assignment.', 'error');
     }
     return !hasErrors;
   };
@@ -247,7 +247,9 @@ export default function AssignmentForm() {
 
           {isUploading && (
             <div className={styles.uploadZone}>
-              <div className={styles.uploadIconWrap}>⏳</div>
+              <div className={styles.uploadIconWrap}>
+                <Loader2 size={28} className="animate-spin" />
+              </div>
               <p className={styles.uploadTitle}>Reading uploaded file...</p>
             </div>
           )}
@@ -550,7 +552,7 @@ export default function AssignmentForm() {
               className={styles.compileBtnSidebar}
               disabled={isLoading}
             >
-              <span>{isLoading ? 'Creating Test Paper...' : 'Create Test Paper'}</span>
+              <span>{isLoading ? 'Creating Assignment...' : 'Create Assignment'}</span>
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           ) : (
@@ -562,7 +564,7 @@ export default function AssignmentForm() {
                   validate();
                 }}
               >
-                <span>Create Test Paper</span>
+                <span>Create Assignment</span>
                 <ArrowRight size={16} aria-hidden="true" />
               </button>
               <div className={styles.missingPrompt}>
