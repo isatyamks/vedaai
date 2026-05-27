@@ -1,21 +1,21 @@
 'use client';
 
 import React from 'react';
-import { Home, Users, FileText, Sparkles, FolderOpen, Settings, Plus } from 'lucide-react';
-import { useAssignmentStore } from '../store/assignmentStore';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutGrid, Users, FileText, BarChart3, Clock, Settings, Plus } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Home', id: 'home' },
-  { icon: Users, label: 'My Groups', id: 'groups' },
-  { icon: Sparkles, label: "AI Teacher's Toolkit", id: 'toolkit' },
-  { icon: FolderOpen, label: 'My Library', id: 'library' },
+  { icon: LayoutGrid, label: 'Home', path: '/' },
+  { icon: Users, label: 'My Classes', path: '/groups' },
+  { icon: FileText, label: 'Assignments', path: '/library' },
+  { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+  { icon: Clock, label: 'My Library', path: '/toolkit', badge: 32 },
 ] as const;
 
 export default function Sidebar() {
-  const { setCreationForm, showCreationForm, activeAssignment, selectAssignment } = useAssignmentStore();
-
-  const isAssignmentsActive = !showCreationForm && activeAssignment === null;
+  const pathname = usePathname();
 
   return (
     <aside className={styles.sidebar}>
@@ -26,44 +26,50 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <button
-        className={`${styles.createBtn} ${showCreationForm ? styles.createBtnActive : ''}`}
-        onClick={() => setCreationForm(true)}
-        aria-label="Create new assignment"
+      <Link
+        href="/create"
+        className={`${styles.createBtn} ${pathname === '/create' ? styles.createBtnActive : ''}`}
+        aria-label="Create new test paper"
         id="sidebar-create-btn"
       >
         <Plus size={16} aria-hidden="true" />
-        <span>Create Assignment</span>
-      </button>
+        <span>Create Test Paper</span>
+      </Link>
 
       <nav className={styles.nav} aria-label="Main navigation">
-        {NAV_ITEMS.map(({ icon: Icon, label, id }) => (
-          <a key={id} href="#" className={styles.navLink} aria-label={label}>
-            <Icon size={20} aria-hidden="true" />
-            <span>{label}</span>
-          </a>
-        ))}
-
-        <a
-          href="#"
-          className={`${styles.navLink} ${isAssignmentsActive ? styles.active : ''}`}
-          aria-current={isAssignmentsActive ? 'page' : undefined}
-          onClick={(e) => {
-            e.preventDefault();
-            selectAssignment(null);
-            setCreationForm(false);
-          }}
-        >
-          <FileText size={20} aria-hidden="true" />
-          <span>Assignments</span>
-        </a>
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const label = item.label;
+          const path = item.path;
+          const badge = 'badge' in item ? item.badge : undefined;
+          const isActive = pathname === path;
+          return (
+            <Link
+              key={path}
+              href={path}
+              className={`${styles.navLink} ${isActive ? styles.active : ''}`}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon size={20} aria-hidden="true" />
+              <span>{label}</span>
+              {badge !== undefined && (
+                <span className={styles.navBadge}>{badge}</span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       <footer className={styles.footer}>
-        <a href="#" className={styles.settingsLink} aria-label="Settings">
+        <Link
+          href="/settings"
+          className={`${styles.settingsLink} ${pathname === '/settings' ? styles.active : ''}`}
+          aria-label="Settings"
+        >
           <Settings size={20} aria-hidden="true" />
           <span>Settings</span>
-        </a>
+        </Link>
 
         <div className={styles.schoolProfile}>
           <div className={styles.schoolAvatar} aria-hidden="true">🏫</div>

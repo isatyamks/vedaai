@@ -31,7 +31,7 @@ async function start(): Promise<void> {
   initWorker();
 
   server.listen(PORT, () => {
-    console.log(`VedaAI backend → http://localhost:${PORT}`);
+    console.log(`Veda AI backend → http://localhost:${PORT}`);
   });
 }
 

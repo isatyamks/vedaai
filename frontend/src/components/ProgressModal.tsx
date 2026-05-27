@@ -6,10 +6,10 @@ import { useAssignmentStore, IActiveJob } from '../store/assignmentStore';
 import styles from './ProgressModal.module.css';
 
 const STEPS: { label: string; threshold: number }[] = [
-  { label: 'Job queued in background worker', threshold: 0 },
-  { label: 'Optimizing prompt constraints', threshold: 15 },
-  { label: 'Querying Gemini AI structured output', threshold: 40 },
-  { label: 'Persisting exam paper to database', threshold: 70 },
+  { label: 'Preparing to make test paper', threshold: 0 },
+  { label: 'Checking selected rules and sections', threshold: 15 },
+  { label: 'Writing questions matching difficulty rules', threshold: 40 },
+  { label: 'Creating final test paper layout', threshold: 70 },
 ];
 
 function StepIcon({ isDone, isActive }: { isDone: boolean; isActive: boolean }) {
@@ -50,7 +50,7 @@ export default function ProgressModal() {
   const isTerminal = status === 'completed' || status === 'failed';
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Assessment generation progress">
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Test paper creation progress">
       <div className={styles.modal}>
         {status === 'failed' ? (
           <div className={styles.failedIcon}>
@@ -67,10 +67,10 @@ export default function ProgressModal() {
         <div className={styles.statusText}>
           <h4 className={styles.statusTitle}>
             {status === 'failed'
-              ? 'Generation Failed'
+              ? 'Failed to Create'
               : status === 'completed'
-              ? 'Assessment Ready!'
-              : 'Creating Exam Paper...'}
+              ? 'Test Paper Ready!'
+              : 'Creating Test Paper...'}
           </h4>
           <p className={styles.statusDesc}>{message ?? 'Processing your request...'}</p>
         </div>

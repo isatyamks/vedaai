@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Calendar, Award, Layers, HelpCircle } from 'lucide-react';
 import { useAssignmentStore, IAssignment } from '../store/assignmentStore';
-import AssignmentForm from '../components/AssignmentForm';
-import QuestionPaperView from '../components/QuestionPaperView';
 import styles from './page.module.css';
 
 function computeTotals(assignment: IAssignment) {
@@ -23,7 +22,7 @@ function LoadingScreen() {
   return (
     <div className={styles.loaderContainer}>
       <div className={styles.pulsingSpinner} />
-      <span className={styles.loaderText}>Loading assessments...</span>
+      <span className={styles.loaderText}>Loading test papers...</span>
     </div>
   );
 }
@@ -47,14 +46,13 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
           <circle cx="140" cy="62" r="3" fill="#60A5FA" opacity="0.6" />
         </svg>
       </div>
-      <h2 className={styles.emptyTitle}>No assessments yet</h2>
+      <h2 className={styles.emptyTitle}>No test papers yet</h2>
       <p className={styles.emptyDesc}>
-        Create your first assignment to get started. Configure sections, set difficulty, and let Gemini AI
-        generate a structured exam paper ready to print.
+        Create your first test paper to get started. Choose your questions and layout parameters, and create a structured paper ready to print.
       </p>
       <button id="empty-create-btn" className={styles.emptyBtn} onClick={onCreateClick}>
         <Plus size={18} />
-        <span>Create Your First Assignment</span>
+        <span>Create Your First Test Paper</span>
       </button>
     </div>
   );
@@ -86,7 +84,7 @@ function AssignmentCard({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
-      aria-label={`Open assignment: ${assignment.title}`}
+      aria-label={`Open test paper: ${assignment.title}`}
     >
       <div className={styles.cardHeader}>
         <span className={styles.subjectBadge}>{assignment.subject}</span>
@@ -103,7 +101,7 @@ function AssignmentCard({
           </span>
           <span className={styles.metaItem}>
             <HelpCircle size={13} />
-            {assignment.sections.length} sec · {questions} Qs
+            {assignment.sections.length} sections · {questions} Qs
           </span>
         </div>
         <div className={styles.cardMetaRow}>
@@ -134,12 +132,12 @@ function Dashboard({
     <div className="animate-fade">
       <div className={styles.dashboardHeader}>
         <div className={styles.titleArea}>
-          <h1>Assessments Suite</h1>
-          <p>Select an assessment to view the full exam paper, answers, and PDF export.</p>
+          <h1>My Test Papers</h1>
+          <p>Select a test paper to view details, answer keys, and print options.</p>
         </div>
         <button id="dashboard-create-btn" className={styles.createBtn} onClick={onCreateClick}>
           <Plus size={16} />
-          <span>Create Assignment</span>
+          <span>Create Test Paper</span>
         </button>
       </div>
 
@@ -157,19 +155,26 @@ function Dashboard({
 }
 
 export default function Page() {
+  const router = useRouter();
   const {
     assignments,
     isLoading,
-    showCreationForm,
-    activeAssignment,
-    setCreationForm,
-    selectAssignment,
     fetchAssignments,
+    selectAssignment,
   } = useAssignmentStore();
 
   useEffect(() => {
     fetchAssignments();
   }, [fetchAssignments]);
+
+  const handleSelectAssignment = (assignment: IAssignment) => {
+    selectAssignment(assignment);
+    router.push(`/assignment/${assignment._id}`);
+  };
+
+  const handleCreateClick = () => {
+    router.push('/create');
+  };
 
   if (isLoading && assignments.length === 0) {
     return (
@@ -179,29 +184,11 @@ export default function Page() {
     );
   }
 
-  if (showCreationForm) {
-    return (
-      <div className={styles.pageWrapper}>
-        <AssignmentForm />
-      </div>
-    );
-  }
-
-  if (activeAssignment) {
-    return (
-      <div className={styles.pageWrapper}>
-        <div className={styles.content}>
-          <QuestionPaperView />
-        </div>
-      </div>
-    );
-  }
-
   if (assignments.length === 0) {
     return (
       <div className={styles.pageWrapper}>
         <div className={styles.content}>
-          <EmptyState onCreateClick={() => setCreationForm(true)} />
+          <EmptyState onCreateClick={handleCreateClick} />
         </div>
       </div>
     );
@@ -212,8 +199,8 @@ export default function Page() {
       <div className={styles.content}>
         <Dashboard
           assignments={assignments}
-          onCreateClick={() => setCreationForm(true)}
-          onSelectAssignment={selectAssignment}
+          onCreateClick={handleCreateClick}
+          onSelectAssignment={handleSelectAssignment}
         />
       </div>
     </div>

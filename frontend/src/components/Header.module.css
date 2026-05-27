@@ -143,3 +143,33 @@
     padding: 0;
   }
 }
+
+.topLoader {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2.5px;
+  width: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.topLoaderBar {
+  height: 100%;
+  width: 100%;
+  background: var(--brand-gradient);
+  animation: loadingAnim 1.6s infinite ease-in-out;
+  transform-origin: 0% 50%;
+}
+
+@keyframes loadingAnim {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  50% {
+    transform: translateX(-10%) scaleX(0.7);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+  }
+}

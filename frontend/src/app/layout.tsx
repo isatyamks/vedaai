@@ -4,12 +4,13 @@ import './globals.css';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import ProgressModal from '../components/ProgressModal';
+import ToastContainer from '../components/ToastContainer';
 
 export const metadata: Metadata = {
-  title: 'VedaAI — AI-Powered Assessment Creator',
+  title: 'Veda AI — School Test & Exam Maker',
   description:
-    'Design dynamic, multi-section exam papers with Google Gemini AI. Built for educators who demand precision.',
-  keywords: ['AI assessment', 'question paper generator', 'VedaAI', 'exam creator', 'Gemini AI'],
+    'Create structured test papers and school exam sheets for modern classrooms.',
+  keywords: ['assessment platform', 'question paper generator', 'Veda AI', 'exam creator', 'educational software'],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Sidebar />
         <ProgressModal />
+        <ToastContainer />
         <div className="shell">
           <Header />
           <main className="shell__content">{children}</main>

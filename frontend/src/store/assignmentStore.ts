@@ -28,6 +28,9 @@ export interface IAssignment {
   progress: number;
   errorMessage?: string;
   sections: ISection[];
+  sets?: { setName: string; sections: ISection[] }[];
+  setCount?: number;
+  chapters?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +57,8 @@ export interface CreateAssignmentPayload {
   dueDate: string;
   additionalInstructions: string;
   sections: ISectionConfig[];
+  setCount?: number;
+  chapters?: string[];
 }
 
 interface AssignmentStore {
@@ -63,6 +68,9 @@ interface AssignmentStore {
   activeJob: IActiveJob | null;
   showCreationForm: boolean;
   errorMessage: string | null;
+  toast: { message: string; type: 'success' | 'info' | 'error' } | null;
+  showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
+  hideToast: () => void;
 
   fetchAssignments: () => Promise<void>;
   fetchAssignmentDetails: (id: string) => Promise<IAssignment | null>;
@@ -91,6 +99,16 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   activeJob: null,
   showCreationForm: false,
   errorMessage: null,
+  toast: null,
+  showToast: (message, type = 'info') => {
+    set({ toast: { message, type } });
+    const existingTimeout = (globalThis as any).__toastTimeout;
+    if (existingTimeout) clearTimeout(existingTimeout);
+    (globalThis as any).__toastTimeout = setTimeout(() => {
+      set({ toast: null });
+    }, 3000);
+  },
+  hideToast: () => set({ toast: null }),
 
   fetchAssignments: async () => {
     set({ isLoading: true, errorMessage: null });
@@ -107,7 +125,13 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
   },
 
   fetchAssignmentDetails: async (id) => {
-    set({ isLoading: true, errorMessage: null });
+    const existing = get().assignments.find((a) => a._id === id);
+    if (existing && existing.sections && existing.sections.length > 0) {
+      set({ activeAssignment: existing, isLoading: true });
+    } else {
+      set({ isLoading: true });
+    }
+    set({ errorMessage: null });
     try {
       const res = await fetch(`${API}/api/assignments/${id}`);
       if (!res.ok) throw new Error('Failed to fetch assignment details.');
@@ -152,7 +176,9 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
       get().setupSocketListener(assignment._id);
       return assignment._id;
     } catch (err) {
-      set({ errorMessage: err instanceof Error ? err.message : 'Error creating assignment.' });
+      const msg = err instanceof Error ? err.message : 'Error creating assignment.';
+      set({ errorMessage: msg });
+      get().showToast(msg, 'error');
       return null;
     } finally {
       set({ isLoading: false });
@@ -188,7 +214,9 @@ export const useAssignmentStore = create<AssignmentStore>((set, get) => ({
 
       get().setupSocketListener(id);
     } catch (err) {
-      set({ errorMessage: err instanceof Error ? err.message : 'Error during regeneration.' });
+      const msg = err instanceof Error ? err.message : 'Error during regeneration.';
+      set({ errorMessage: msg });
+      get().showToast(msg, 'error');
     } finally {
       set({ isLoading: false });
     }

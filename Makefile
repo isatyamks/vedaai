@@ -1,11 +1,11 @@
 .PHONY: start stop restart logs clean ps build shell-backend shell-frontend
 
 start:
-	@echo "[vedaai] Stopping host processes on ports 3000, 5000..."
+	@echo "[veda-ai] Stopping host processes on ports 3000, 5000..."
 	-npx --yes kill-port 3000 5000 2>nul || true
-	@echo "[vedaai] Tearing down existing containers and volumes..."
+	@echo "[veda-ai] Tearing down existing containers and volumes..."
 	docker compose down --remove-orphans --volumes
-	@echo "[vedaai] Building and starting fresh..."
+	@echo "[veda-ai] Building and starting fresh..."
 	docker compose up --build --force-recreate --detach
 	@echo ""
 	@echo "  Frontend URL -> http://localhost:3000"

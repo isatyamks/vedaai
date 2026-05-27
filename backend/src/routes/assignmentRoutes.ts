@@ -78,7 +78,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { title, subject, grade, dueDate, additionalInstructions, sections } = req.body;
+    const { title, subject, grade, dueDate, additionalInstructions, sections, setCount, chapters } = req.body;
 
     if (!title?.trim()) return res.status(400).json({ error: 'Assignment title is required.' });
     if (!subject?.trim()) return res.status(400).json({ error: 'Subject area is required.' });
@@ -100,6 +100,9 @@ router.post('/', async (req: Request, res: Response) => {
       status: 'queued',
       progress: 0,
       sections: [],
+      sets: [],
+      setCount: setCount ? Math.min(Math.max(Number(setCount), 1), 4) : 1,
+      chapters: Array.isArray(chapters) ? chapters : [],
     });
 
     await cacheDelete(CK.list);
@@ -139,6 +142,7 @@ router.post('/:id/regenerate', async (req: Request, res: Response) => {
     assignment.status = 'queued';
     assignment.progress = 0;
     assignment.sections = [];
+    assignment.sets = [];
     assignment.errorMessage = undefined;
     await assignment.save();
 
@@ -159,7 +163,8 @@ router.get('/:id/pdf', async (req: Request, res: Response) => {
     if (assignment.status !== 'completed') {
       return res.status(400).json({ error: 'PDF is only available for completed assessments.' });
     }
-    return generateAssignmentPDF(assignment, res);
+    const requestedSet = req.query.set as string;
+    return generateAssignmentPDF(assignment, res, requestedSet);
   } catch {
     return res.status(500).json({ error: 'Failed to generate PDF.' });
   }

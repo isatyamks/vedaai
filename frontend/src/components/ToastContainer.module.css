@@ -1,0 +1,73 @@
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 380px;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all var(--transition-fast);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.message {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.closeBtn {
+  color: var(--muted);
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
+
+.closeBtn:hover {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.info .icon {
+  color: var(--brand-orange);
+}
+
+.success {
+  border-color: var(--color-easy-border);
+  background-color: var(--color-easy-bg);
+}
+
+.success .icon {
+  color: var(--color-easy-text);
+}
+
+.success .message {
+  color: var(--color-easy-text);
+}
+
+.error {
+  border-color: var(--color-hard-border);
+  background-color: var(--color-hard-bg);
+}
+
+.error .icon {
+  color: var(--color-hard-text);
+}
+
+.error .message {
+  color: var(--color-hard-text);
+}

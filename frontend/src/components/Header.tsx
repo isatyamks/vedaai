@@ -2,29 +2,56 @@
 
 import React from 'react';
 import { ArrowLeft, Bell, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAssignmentStore } from '../store/assignmentStore';
 import styles from './Header.module.css';
 
 export default function Header() {
-  const { showCreationForm, activeAssignment, selectAssignment, setCreationForm } = useAssignmentStore();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { activeAssignment, isLoading } = useAssignmentStore();
 
   const handleBack = () => {
-    selectAssignment(null);
-    setCreationForm(false);
+    if (pathname !== '/') {
+      router.push('/');
+    }
   };
 
-  const breadcrumb = showCreationForm
-    ? 'Create Assignment'
-    : activeAssignment
-    ? activeAssignment.title
-    : 'Assignments';
+  let breadcrumb = 'Test Papers';
+  if (pathname === '/create') {
+    breadcrumb = 'Create Test Paper';
+  } else if (pathname.startsWith('/assignment/') && activeAssignment) {
+    breadcrumb = activeAssignment.title;
+  } else if (pathname === '/groups') {
+    breadcrumb = 'My Classes';
+  } else if (pathname === '/toolkit') {
+    breadcrumb = "Teacher Tools";
+  } else if (pathname === '/library') {
+    breadcrumb = 'My Library';
+  } else if (pathname === '/settings') {
+    breadcrumb = 'Settings';
+  }
+
+  const showBackBtn = pathname !== '/';
 
   return (
     <header className={styles.header}>
-      <button className={styles.breadcrumb} onClick={handleBack} aria-label="Navigate back">
-        <span className={styles.backIcon}>
-          <ArrowLeft size={16} />
-        </span>
+      {isLoading && (
+        <div className={styles.topLoader} aria-hidden="true">
+          <div className={styles.topLoaderBar} />
+        </div>
+      )}
+      <button 
+        className={styles.breadcrumb} 
+        onClick={handleBack} 
+        disabled={!showBackBtn}
+        aria-label="Navigate back"
+      >
+        {showBackBtn && (
+          <span className={styles.backIcon}>
+            <ArrowLeft size={16} />
+          </span>
+        )}
         <span className={styles.breadcrumbLabel}>{breadcrumb}</span>
       </button>
 
