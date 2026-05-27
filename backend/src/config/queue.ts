@@ -1,15 +1,14 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { env } from './env';
 
 export let redisAvailable = false;
 export let redisConnection: IORedis | null = null;
 export let assessmentQueue: Queue | null = null;
 
-const REDIS_URL = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379';
-
 export async function initQueue(): Promise<void> {
   try {
-    const conn = new IORedis(REDIS_URL, {
+    const conn = new IORedis(env.REDIS_URL, {
       maxRetriesPerRequest: null,
       connectTimeout: 4000,
       lazyConnect: true,
