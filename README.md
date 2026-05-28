@@ -4,6 +4,7 @@
   <p><strong>Building the future of modern classrooms. A lightning-fast, highly scalable, AI-powered assessment creator designed for speed and a seamless user experience.</strong></p>
   
   [![Frontend](https://img.shields.io/badge/Frontend-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vedaai-rho.vercel.app)
+</div>
 
 ---
 
