@@ -4,8 +4,6 @@
   <p><strong>Building the future of modern classrooms. A lightning-fast, highly scalable, AI-powered assessment creator designed for speed and a seamless user experience.</strong></p>
   
   [![Frontend](https://img.shields.io/badge/Frontend-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vedaai-rho.vercel.app)
-  [![Backend](https://img.shields.io/badge/Backend-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vedaai-backend.vercel.app)
-</div>
 
 ---
 
@@ -14,7 +12,6 @@
 Hey there! Want to see VedaAI in action? Check out our live deployments:
 
 - **Frontend Application:** [https://vedaai-rho.vercel.app](https://vedaai-rho.vercel.app)
-- **Backend API:** [https://vedaai-backend.vercel.app](https://vedaai-backend.vercel.app)
 
 ---
 
